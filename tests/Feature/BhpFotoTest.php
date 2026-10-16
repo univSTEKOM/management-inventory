@@ -14,6 +14,7 @@ use App\Filament\Inventory\Resources\SupplyCategoryResource\Pages\ListSupplyCate
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Tests\Concerns\FakesPhotoStorage;
 use Tests\TestCase;
 
 /**
@@ -26,6 +27,7 @@ use Tests\TestCase;
  */
 class BhpFotoTest extends TestCase
 {
+    use FakesPhotoStorage;
     use RefreshDatabase;
 
     private Classification $bhpClassification;
@@ -43,8 +45,7 @@ class BhpFotoTest extends TestCase
         $user->roles()->attach([$role->id]);
         $this->actingAs($user);
 
-        Storage::fake('s3');
-        config(['filesystems.default' => 's3']);
+        $this->fakePhotoDisks();
 
         // Buat klasifikasi BHP dengan slug yang sesuai
         $this->bhpClassification = Classification::factory()->create([
@@ -166,13 +167,13 @@ class BhpFotoTest extends TestCase
         // bhp1 sudah punya 1 foto
         $bhp1->photos()->create(['file_path' => 'asset-photos/existing.jpg', 'sort_order' => 0]);
 
-        $newPhoto = 'asset-photos/new-bhp-photo.jpg';
-        Storage::disk('s3')->put($newPhoto, 'content');
+        $newPhoto = $this->putTestImage('asset-photos/new-bhp-photo.png');
 
         Livewire::test(ListSupplyCategory::class)
             ->callTableBulkAction('addPhotoBulk', [$bhp1->id, $bhp2->id], data: [
-                'new_photos'      => [$newPhoto],
-                'allow_overwrite' => false,
+                'photo'         => [$newPhoto],
+                'existing_mode' => \App\Services\ItemPhotoService::MODE_ADD,
+                'confirmed'     => true,
             ])
             ->assertSuccessful();
 
@@ -198,32 +199,31 @@ class BhpFotoTest extends TestCase
     {
         Livewire::test(ListSupplyCategory::class)
             ->callTableBulkAction('addPhotoBulk', [], data: [
-                'new_photos'      => ['asset-photos/any.jpg'],
-                'allow_overwrite' => false,
+                'photo' => ['asset-photos/any.jpg'],
             ])
             ->assertSuccessful();
 
         $this->assertDatabaseCount('asset_photos', 0);
     }
 
-    /** Overwrite mode menghapus foto lama BHP yang sudah penuh (3 foto). */
+    /** Mode "ganti" menghapus foto lama BHP yang sudah penuh (3 foto). */
     public function test_bulk_add_photo_overwrites_bhp_photos_when_allowed(): void
     {
         $bhp = $this->makeBhpAsset();
 
         // Isi 3 foto (maksimum)
         for ($i = 0; $i < 3; $i++) {
-            Storage::disk('s3')->put("asset-photos/old-{$i}.jpg", 'content');
+            $this->putTestImage("asset-photos/old-{$i}.jpg");
             $bhp->photos()->create(['file_path' => "asset-photos/old-{$i}.jpg", 'sort_order' => $i]);
         }
 
-        $newPhoto = 'asset-photos/replacement.jpg';
-        Storage::disk('s3')->put($newPhoto, 'content');
+        $newPhoto = $this->putTestImage('asset-photos/replacement.png');
 
         Livewire::test(ListSupplyCategory::class)
             ->callTableBulkAction('addPhotoBulk', [$bhp->id], data: [
-                'new_photos'      => [$newPhoto],
-                'allow_overwrite' => true,
+                'photo'         => [$newPhoto],
+                'existing_mode' => \App\Services\ItemPhotoService::MODE_REPLACE,
+                'confirmed'     => true,
             ])
             ->assertSuccessful();
 
@@ -232,23 +232,23 @@ class BhpFotoTest extends TestCase
         $this->assertDatabaseHas('asset_photos', ['asset_id' => $bhp->id, 'file_path' => $newPhoto]);
     }
 
-    /** BHP yang sudah 3 foto di-skip jika allow_overwrite = false. */
+    /** BHP yang sudah 3 foto tidak bertambah pada mode "tambah". */
     public function test_bulk_add_photo_skips_full_bhp_when_overwrite_not_allowed(): void
     {
         $bhp = $this->makeBhpAsset();
 
         for ($i = 0; $i < 3; $i++) {
-            Storage::disk('s3')->put("asset-photos/full-{$i}.jpg", 'content');
+            $this->putTestImage("asset-photos/full-{$i}.jpg");
             $bhp->photos()->create(['file_path' => "asset-photos/full-{$i}.jpg", 'sort_order' => $i]);
         }
 
-        $newPhoto = 'asset-photos/should-not-be-added.jpg';
-        Storage::disk('s3')->put($newPhoto, 'content');
+        $newPhoto = $this->putTestImage('asset-photos/should-not-be-added.png');
 
         Livewire::test(ListSupplyCategory::class)
             ->callTableBulkAction('addPhotoBulk', [$bhp->id], data: [
-                'new_photos'      => [$newPhoto],
-                'allow_overwrite' => false,
+                'photo'         => [$newPhoto],
+                'existing_mode' => \App\Services\ItemPhotoService::MODE_ADD,
+                'confirmed'     => true,
             ])
             ->assertSuccessful();
 

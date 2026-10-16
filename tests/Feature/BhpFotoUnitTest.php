@@ -10,9 +10,7 @@ use App\Models\Campus;
 use App\Models\Location;
 use App\Models\User;
 use App\Models\Role;
-use App\Filament\Support\AddPhotoActions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -151,32 +149,31 @@ class BhpFotoUnitTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
-    // 4. resolveAssets() — BHP sebagai Asset diproses
+    // 4. ItemPhotoService::targetsFromRecords() — BHP sebagai Asset diproses
     // -----------------------------------------------------------------------
 
-    public function test_resolve_assets_processes_bhp_asset_instances(): void
+    public function test_targets_map_bhp_asset_instances_to_asset_targets(): void
     {
         $bhp1 = $this->makeBhpAsset(['name' => 'BHP 1']);
         $bhp2 = $this->makeBhpAsset(['name' => 'BHP 2']);
 
-        $collection = collect([$bhp1, $bhp2]);
+        $targets = \App\Services\ItemPhotoService::targetsFromRecords(collect([$bhp1, $bhp2]));
 
-        // Panggil resolveAssets via reflection (protected method)
-        $resolved = $this->callProtectedResolveAssets($collection);
-
-        $this->assertCount(2, $resolved);
-        $this->assertTrue($resolved->contains('id', $bhp1->id));
-        $this->assertTrue($resolved->contains('id', $bhp2->id));
+        $this->assertEqualsCanonicalizing([$bhp1->id, $bhp2->id], $targets['assets']);
+        $this->assertSame([], $targets['balances']);
     }
 
-    public function test_resolve_assets_returns_empty_for_inventory_balance(): void
+    public function test_targets_map_inventory_balance_to_balance_target(): void
     {
+        // Stok BHP (InventoryBalance) kini didukung lewat kolom inventory_balances.photo,
+        // jadi dipetakan sebagai target balance, bukan asset.
         $balance = new \App\Models\InventoryBalance();
-        $collection = collect([$balance]);
+        $balance->id = 123;
 
-        $resolved = $this->callProtectedResolveAssets($collection);
+        $targets = \App\Services\ItemPhotoService::targetsFromRecords(collect([$balance]));
 
-        $this->assertCount(0, $resolved);
+        $this->assertSame([], $targets['assets']);
+        $this->assertSame([123], $targets['balances']);
     }
 
     // -----------------------------------------------------------------------
@@ -193,19 +190,5 @@ class BhpFotoUnitTest extends TestCase
 
         $this->assertEquals('a.jpg', $sorted->first()->file_path);
         $this->assertEquals('b.jpg', $sorted->last()->file_path);
-    }
-
-
-    // Helpers
-    // -----------------------------------------------------------------------
-
-    /** Panggil protected static resolveAssets() via reflection. */
-    private function callProtectedResolveAssets(Collection $records): Collection
-    {
-        $reflection = new \ReflectionClass(AddPhotoActions::class);
-        $method     = $reflection->getMethod('resolveAssets');
-        $method->setAccessible(true);
-
-        return $method->invoke(null, $records);
     }
 }

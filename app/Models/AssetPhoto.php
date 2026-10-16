@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Storage;
 
 class AssetPhoto extends Model
 {
+    // Status foto ikut ditampilkan/difilter di Semua Barang (UnifiedItem).
+    use \App\Traits\InvalidatesUnifiedItemCache;
+
     /** Slot foto pengecekan fisik barang oleh OB (lihat BarangMasukController). */
     public const TYPE_TAMPAK_DEPAN = 'tampak_depan';
     public const TYPE_TAMPAK_SAMPING = 'tampak_samping';
@@ -63,13 +66,16 @@ class AssetPhoto extends Model
         static::deleted(function (AssetPhoto $photo) {
             // Delete actual file. File bisa berada di disk `public` (upload lama)
             // atau disk default/S3 (upload Filament & API pengecekan).
+            // Path yang sama bisa dipakai barang lain (foto massal / duplikat),
+            // jadi file hanya dihapus kalau sudah tidak direferensikan, dan baru
+            // setelah transaksi commit supaya rollback tidak meninggalkan baris
+            // foto yang filenya sudah hilang.
             if ($photo->file_path) {
-                foreach (array_unique(['public', config('filesystems.default')]) as $diskName) {
-                    $disk = Storage::disk($diskName);
-                    if ($disk->exists($photo->file_path)) {
-                        $disk->delete($photo->file_path);
-                    }
-                }
+                $path = $photo->file_path;
+                \Illuminate\Support\Facades\DB::afterCommit(fn () => \App\Support\SharedPhotoFiles::deleteIfUnreferenced(
+                    $path,
+                    ['public', config('filesystems.default')],
+                ));
             }
 
             \App\Services\AuditLogger::log(

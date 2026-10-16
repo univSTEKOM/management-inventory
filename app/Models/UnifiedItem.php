@@ -52,7 +52,9 @@ class UnifiedItem extends Model
                     'purchase_items.unit_price as price',
                     'assets.status as status',
                     'assets.kondisi as kondisi',
-                    'assets.created_at as created_at'
+                    'assets.created_at as created_at',
+                    // Aset, Inventaris & BHP individual: foto di tabel asset_photos.
+                    DB::raw("EXISTS (SELECT 1 FROM asset_photos WHERE asset_photos.asset_id = assets.id AND asset_photos.file_path <> '') as has_photo")
                 );
 
             $categoryClassification = DB::table('category_classification')
@@ -81,7 +83,9 @@ class UnifiedItem extends Model
                     DB::raw("NULL as price"),
                     DB::raw("'available' as status"),
                     'inventory_balances.kondisi as kondisi',
-                    'inventory_balances.created_at as created_at'
+                    'inventory_balances.created_at as created_at',
+                    // Stok BHP: satu foto representatif di kolom inventory_balances.photo.
+                    DB::raw("CASE WHEN inventory_balances.photo IS NOT NULL AND inventory_balances.photo <> '' THEN 1 ELSE 0 END as has_photo")
                 );
 
             $builder->fromSub($assets->unionAll($supplies), 'unified_items');
