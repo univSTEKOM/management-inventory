@@ -261,6 +261,7 @@ abstract class BaseCategoryAssetResource extends Resource
                 \App\Filament\Support\AddPhotoActions::bulkAction(),
                 \App\Filament\Support\MoveLocationActions::bulkAction(),
                 \App\Filament\Support\ChangeCategoryActions::bulkAction(),
+                \App\Filament\Support\DeleteItemsActions::bulkAction(),
             ])
             ->emptyStateHeading('Belum ada barang di kategori ini')
             ->emptyStateDescription('Tambahkan barang baru dan pilih kategori yang sesuai.')

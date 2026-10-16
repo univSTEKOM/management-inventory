@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
             'panels::sidebar.expand-button.rtl' => 'heroicon-o-bars-3',
         ]);
         \Filament\Tables\Table::configureUsing(
-            fn (\Filament\Tables\Table $table) => $table->paginationPageOptions([10, 25, 50, 100, 'all'])
+            fn (\Filament\Tables\Table $table) => $table->paginationPageOptions([10, 25, 50, 100])
         );
 
         // Dropdown Gedung/Ruangan sebaris dengan search/filter/kolom (paling kiri).
