@@ -44,6 +44,15 @@ class UnifiedItemResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\IconColumn::make('has_photo')
+                    ->label('Foto')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-photo')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->tooltip(fn (UnifiedItem $record): string => $record->has_photo ? 'Sudah ada foto' : 'Belum ada foto')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('barcode')
                     ->label('Barcode')
                     ->toggleable()
@@ -138,6 +147,36 @@ class UnifiedItemResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                // has_photo dihitung di subquery UnifiedItem (asset_photos untuk
+                // Aset/Inventaris/BHP individual, inventory_balances.photo untuk
+                // Stok BHP), jadi filter jalan di query backend + pagination.
+                Tables\Filters\SelectFilter::make('photo_status')
+                    ->label('Status Foto')
+                    ->placeholder('Semua')
+                    ->options([
+                        'with'    => 'Sudah Ada Foto',
+                        'without' => 'Belum Ada Foto',
+                    ])
+                    ->query(fn (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder => match ($data['value'] ?? null) {
+                        'with'    => $query->where('has_photo', 1),
+                        'without' => $query->where('has_photo', 0),
+                        default   => $query,
+                    }),
+                // Dipakai juga oleh aksi baris "Merk/tipe sama" untuk memilih
+                // barang sejenis sebelum Tambah Foto Massal.
+                Tables\Filters\SelectFilter::make('brand')
+                    ->label('Merk/Tipe')
+                    ->options(fn () => \Illuminate\Support\Facades\DB::table('assets')
+                        ->whereNull('deleted_at')
+                        ->where('brand', '<>', '')
+                        ->distinct()
+                        ->pluck('brand')
+                        ->merge(\Illuminate\Support\Facades\DB::table('inventory_balances')->where('brand', '<>', '')->distinct()->pluck('brand'))
+                        ->unique()
+                        ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+                        ->mapWithKeys(fn ($brand) => [$brand => $brand])
+                        ->all())
+                    ->searchable(),
                 Tables\Filters\SelectFilter::make('category_name')
                     ->label('Kategori')
                     ->options(fn () => \App\Models\Category::pluck('name', 'name')->toArray())
@@ -203,6 +242,19 @@ class UnifiedItemResource extends Resource
                     }),
             ])
             ->actions([
+                \App\Filament\Support\AddPhotoActions::rowAction(),
+                \Filament\Actions\Action::make('filterSameBrand')
+                    ->label('Merk/tipe sama')
+                    ->tooltip('Tampilkan barang dengan merk/tipe sama')
+                    ->icon('heroicon-o-funnel')
+                    ->color('gray')
+                    ->iconButton()
+                    ->visible(fn (UnifiedItem $record): bool => filled($record->brand))
+                    ->action(function (UnifiedItem $record, \Livewire\Component $livewire): void {
+                        // Hanya memfilter daftar; pengguna tetap memeriksa & mencentang sendiri.
+                        $livewire->tableFilters['brand'] = ['value' => $record->brand];
+                        $livewire->updatedTableFilters();
+                    }),
                 \Filament\Actions\Action::make('manage')
                     ->label('Kelola / Detail')
                     ->icon('heroicon-o-arrow-right-circle')
@@ -230,6 +282,7 @@ class UnifiedItemResource extends Resource
                 \App\Filament\Support\ChangeCategoryActions::bulkAction(),
                 \App\Filament\Support\ChangeStatusActions::bulkAction(),
                 \App\Filament\Support\ChangeKondisiActions::bulkAction(),
+                \App\Filament\Support\DeleteItemsActions::bulkAction(),
             ]);
     }
 

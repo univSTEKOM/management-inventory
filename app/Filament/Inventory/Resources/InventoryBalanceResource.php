@@ -163,9 +163,10 @@ class InventoryBalanceResource extends Resource
                         // FileUpload multiple=false tapi fillForm pakai array, normalize:
                         $newPhoto = is_array($photoState) ? (reset($photoState) ?: null) : ($photoState ?: null);
 
-                        // Hapus foto lama dari S3 jika diganti
+                        // Hapus foto lama dari S3 jika diganti, kecuali file-nya
+                        // masih dipakai barang lain (foto massal).
                         if ($record->photo && $newPhoto !== $record->photo) {
-                            \Illuminate\Support\Facades\Storage::disk('s3')->delete($record->photo);
+                            \App\Support\SharedPhotoFiles::deleteIfUnreferenced($record->photo, ['s3'], exceptBalanceId: $record->id);
                         }
 
                         $record->update(array_merge(
@@ -277,6 +278,7 @@ class InventoryBalanceResource extends Resource
             ->bulkActions([
                 \App\Filament\Support\MoveLocationActions::bulkAction(),
                 \App\Filament\Support\ChangeCategoryActions::bulkAction(),
+                \App\Filament\Support\DeleteItemsActions::bulkAction(),
             ]);
     }
 

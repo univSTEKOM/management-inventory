@@ -766,12 +766,10 @@ class AssetResource extends Resource
             ->selectCurrentPageOnly()
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make()
-                        ->visible(fn () => Auth::user()->hasRole('superadmin')),
                     \Filament\Actions\ForceDeleteBulkAction::make()
-                        ->visible(fn () => Auth::user()->hasRole('superadmin')),
+                        ->visible(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')),
                     \Filament\Actions\RestoreBulkAction::make()
-                        ->visible(fn () => Auth::user()->hasRole('superadmin')),
+                        ->visible(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')),
                 ]),
                 \App\Filament\Support\PrintBarcodeActions::bulkAction(),
                 \App\Filament\Support\PrintChecklistActions::bulkAction(),
@@ -780,6 +778,7 @@ class AssetResource extends Resource
                 \App\Filament\Support\ChangeCategoryActions::bulkAction(),
                 \App\Filament\Support\ChangeStatusActions::bulkAction(),
                 \App\Filament\Support\ChangeKondisiActions::bulkAction(),
+                \App\Filament\Support\DeleteItemsActions::bulkAction(),
             ])
             ->emptyStateHeading('Belum ada Barang/Aset')
             ->emptyStateDescription('Mulai kelola inventaris Anda dengan menambahkan barang baru.');

@@ -64,8 +64,10 @@ class Asset extends Model {
                 }
             };
 
+            // Baris asset_photos ikut terhapus via cascade, tapi file-nya bisa
+            // masih dipakai barang lain (foto massal / duplikat).
             foreach ($asset->photos as $photo) {
-                $deleteFile($photo->file_path);
+                \App\Support\SharedPhotoFiles::deleteIfUnreferenced($photo->file_path, $disks, exceptAssetId: $asset->id);
             }
 
             $deleteFile($asset->foto_resi);
