@@ -200,86 +200,78 @@ class UserResource extends Resource
             ->filters([
                 //
             ])
-            ->recordActionsColumnLabel('Actions')
             ->actions([
-                ViewAction::make()
-                    ->icon('heroicon-o-eye')
-                    ->iconButton()
-                    ->tooltip('Detail User'),
+                ActionGroup::make([
+                    ViewAction::make()
+                        ->tooltip('Detail User'),
 
-                Action::make('manageRoles')
-                    ->label('Kelola Role')
-                    ->icon('heroicon-o-shield-check')
-                    ->iconButton()
-                    ->tooltip('Kelola Role')
-                    ->modalHeading('Kelola Role User')
-                    ->modalWidth('md')
-                    ->fillForm(fn (User $record): array => [
-                        'roles' => $record->roles->pluck('id')->all(),
-                    ])
-                    ->form([
-                        Components\CheckboxList::make('roles')
-                            ->hiddenLabel()
-                            ->options(Role::pluck('name', 'id')->all())
-                            ->bulkToggleable(),
-                    ])
-                    ->action(function (User $record, array $data) {
-                        $record->roles()->sync($data['roles'] ?? []);
+                    Action::make('manageRoles')
+                        ->label('Kelola Role')
+                        ->icon('heroicon-o-shield-check')
+                        ->tooltip('Kelola Role')
+                        ->modalHeading('Kelola Role User')
+                        ->modalWidth('md')
+                        ->fillForm(fn (User $record): array => [
+                            'roles' => $record->roles->pluck('id')->all(),
+                        ])
+                        ->form([
+                            Components\CheckboxList::make('roles')
+                                ->hiddenLabel()
+                                ->options(Role::pluck('name', 'id')->all())
+                                ->bulkToggleable(),
+                        ])
+                        ->action(function (User $record, array $data) {
+                            $record->roles()->sync($data['roles'] ?? []);
 
-                        Notification::make()
-                            ->title('Role User Berhasil Diperbarui')
-                            ->success()
-                            ->send();
-                    }),
+                            Notification::make()
+                                ->title('Role User Berhasil Diperbarui')
+                                ->success()
+                                ->send();
+                        }),
 
-                Action::make('changePassword')
-                    ->label('Ubah Password')
-                    ->icon('heroicon-o-lock-closed')
-                    ->iconButton()
-                    ->tooltip('Ubah Password')
-                    ->modalHeading('Ubah Password User')
-                    ->modalWidth('md')
-                    ->form([
-                        Components\TextInput::make('password')
-                            ->label('Password Baru')
-                            ->password()
-                            ->required()
-                            ->minLength(8)
-                            ->same('password_confirmation'),
+                    Action::make('changePassword')
+                        ->label('Ubah Password')
+                        ->icon('heroicon-o-lock-closed')
+                        ->tooltip('Ubah Password')
+                        ->modalHeading('Ubah Password User')
+                        ->modalWidth('md')
+                        ->form([
+                            Components\TextInput::make('password')
+                                ->label('Password Baru')
+                                ->password()
+                                ->required()
+                                ->minLength(8)
+                                ->same('password_confirmation'),
 
-                        Components\TextInput::make('password_confirmation')
-                            ->label('Konfirmasi Password Baru')
-                            ->password()
-                            ->required(),
-                    ])
-                    ->action(function (User $record, array $data) {
-                        $record->update([
-                            'password' => Hash::make($data['password']),
-                        ]);
+                            Components\TextInput::make('password_confirmation')
+                                ->label('Konfirmasi Password Baru')
+                                ->password()
+                                ->required(),
+                        ])
+                        ->action(function (User $record, array $data) {
+                            $record->update([
+                                'password' => Hash::make($data['password']),
+                            ]);
 
-                        Notification::make()
-                            ->title('Password Berhasil Diperbarui')
-                            ->success()
-                            ->send();
-                    }),
+                            Notification::make()
+                                ->title('Password Berhasil Diperbarui')
+                                ->success()
+                                ->send();
+                        }),
 
-                EditAction::make()
-                    ->icon('heroicon-o-pencil')
-                    ->iconButton()
-                    ->tooltip('Edit User')
-                    ->modalHeading('Edit Informasi User'),
+                    EditAction::make()
+                        ->tooltip('Edit User')
+                        ->modalHeading('Edit Informasi User'),
 
-                Action::make('managePermissions')
-                    ->label('Kelola Permission')
-                    ->icon('heroicon-o-key')
-                    ->iconButton()
-                    ->tooltip('Kelola Permission')
-                    ->url(fn (User $record): string => static::getUrl('permissions', ['record' => $record])),
+                    Action::make('managePermissions')
+                        ->label('Kelola Permission')
+                        ->icon('heroicon-o-key')
+                        ->tooltip('Kelola Permission')
+                        ->url(fn (User $record): string => static::getUrl('permissions', ['record' => $record])),
 
-                DeleteAction::make()
-                    ->icon('heroicon-o-trash')
-                    ->iconButton()
-                    ->tooltip('Hapus User'),
+                    DeleteAction::make()
+                        ->tooltip('Hapus User'),
+                ]),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

@@ -240,16 +240,16 @@ abstract class BaseCategoryAssetResource extends Resource
                     }),
             ])
             ->actions([
-                \Filament\Actions\ViewAction::make()
-                    ->hiddenLabel(),
-                \Filament\Actions\Action::make('editFull')
-                    ->label('Edit')
-                    ->hiddenLabel()
-                    ->icon('heroicon-o-pencil-square')
-                    ->url(fn ($record) => static::getEditUrl($record))
-                    ->visible(fn ($record) => Auth::user()->can('update', $record)),
-                \App\Filament\Support\PrintBarcodeActions::viewAction()->hiddenLabel(),
-                \App\Filament\Support\PrintBarcodeActions::rowAction(),
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\ViewAction::make(),
+                    \Filament\Actions\Action::make('editFull')
+                        ->label('Edit')
+                        ->icon('heroicon-o-pencil-square')
+                        ->url(fn ($record) => static::getEditUrl($record))
+                        ->visible(fn ($record) => Auth::user()->can('update', $record)),
+                    \App\Filament\Support\PrintBarcodeActions::viewAction(),
+                    \App\Filament\Support\PrintBarcodeActions::rowAction(),
+                ]),
             ])
             // Centang tetap ada saat search/filter berubah. Tautan "Pilih semua N
             // data" dimatikan, karena tanpa filter-ulang ia bisa memilih seluruh tabel.

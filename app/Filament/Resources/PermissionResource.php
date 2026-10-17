@@ -96,9 +96,11 @@ class PermissionResource extends Resource
                 //
             ])
             ->actions([
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make()
-                    ->requiresConfirmation(),
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\EditAction::make(),
+                    \Filament\Actions\DeleteAction::make()
+                        ->requiresConfirmation(),
+                ]),
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([

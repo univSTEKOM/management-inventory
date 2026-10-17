@@ -126,112 +126,114 @@ class AssetMovementResource extends Resource
                     ->label('Pemohon'),
             ])
             ->actions([
-                \Filament\Actions\Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (AssetMovement $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
-                    ->requiresConfirmation()
-                    ->action(function (AssetMovement $record) {
-                        try {
-                            \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
-                                $lockedRecord = AssetMovement::where('id', $record->id)->lockForUpdate()->first();
-                                if ($lockedRecord->status !== 'pending') {
-                                    throw new \Exception('Mutasi ini sudah diproses.');
-                                }
-                                $lockedRecord->update([
-                                    'status' => 'approved',
-                                    'approved_by' => Auth::id(),
-                                ]);
-                            });
-                            \Filament\Notifications\Notification::make()->title('Mutasi Disetujui')->success()->send();
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
-                        }
-                    }),
-                \Filament\Actions\Action::make('reject')
-                    ->label('Reject')
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->visible(fn (AssetMovement $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
-                    ->requiresConfirmation()
-                    ->form([
-                        \Filament\Forms\Components\Textarea::make('reject_reason')
-                            ->label('Alasan Penolakan')
-                            ->required(),
-                    ])
-                    ->action(function (AssetMovement $record, array $data) {
-                        try {
-                            \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
-                                $lockedRecord = AssetMovement::where('id', $record->id)->lockForUpdate()->first();
-                                if ($lockedRecord->status !== 'pending') {
-                                    throw new \Exception('Mutasi ini sudah diproses.');
-                                }
-                                request()->merge(['reject_reason' => $data['reject_reason']]);
-                                $lockedRecord->update([
-                                    'status' => 'rejected',
-                                    'approved_by' => Auth::id(),
-                                ]);
-                            });
-                            \Filament\Notifications\Notification::make()->title('Mutasi Ditolak')->success()->send();
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
-                        }
-                    }),
-                \Filament\Actions\Action::make('complete')
-                    ->label('Selesaikan (Pindah Fisik)')
-                    ->icon('heroicon-o-flag')
-                    ->color('primary')
-                    ->visible(fn (AssetMovement $record) => $record->status === 'approved' && Auth::user()->hasPermissionTo('movements.complete'))
-                    ->requiresConfirmation()
-                    ->action(function (AssetMovement $record) {
-                        try {
-                            \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
-                                $lockedRecord = AssetMovement::where('id', $record->id)->lockForUpdate()->first();
-                                if ($lockedRecord->status !== 'approved') {
-                                    throw new \Exception('Hanya mutasi yang disetujui yang dapat diselesaikan.');
-                                }
-
-                                $lockedRecord->update([
-                                    'status' => 'completed',
-                                    'movement_date' => now(),
-                                ]);
-
-                                $parentLog = \App\Models\AuditLog::where('auditable_type', get_class($lockedRecord))
-                                    ->where('auditable_id', $lockedRecord->id)
-                                    ->where('action', 'mutation_completed')
-                                    ->latest('id')
-                                    ->first();
-
-                                if ($parentLog) {
-                                    \App\Services\AuditLogger::$currentParentId = $parentLog->id;
-                                }
-
-                                $asset = Asset::where('id', $lockedRecord->asset_id)->lockForUpdate()->first();
-                                if ($asset) {
-                                    $asset->update([
-                                        'campus_id' => $lockedRecord->destination_campus_id,
-                                        'location_id' => $lockedRecord->destination_location_id,
-                                        'pic_id' => $lockedRecord->destination_pic_id,
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\Action::make('approve')
+                        ->label('Approve')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (AssetMovement $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
+                        ->requiresConfirmation()
+                        ->action(function (AssetMovement $record) {
+                            try {
+                                \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                                    $lockedRecord = AssetMovement::where('id', $record->id)->lockForUpdate()->first();
+                                    if ($lockedRecord->status !== 'pending') {
+                                        throw new \Exception('Mutasi ini sudah diproses.');
+                                    }
+                                    $lockedRecord->update([
+                                        'status' => 'approved',
+                                        'approved_by' => Auth::id(),
                                     ]);
-                                }
+                                });
+                                \Filament\Notifications\Notification::make()->title('Mutasi Disetujui')->success()->send();
+                            } catch (\Exception $e) {
+                                \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                    \Filament\Actions\Action::make('reject')
+                        ->label('Reject')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->visible(fn (AssetMovement $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
+                        ->requiresConfirmation()
+                        ->form([
+                            \Filament\Forms\Components\Textarea::make('reject_reason')
+                                ->label('Alasan Penolakan')
+                                ->required(),
+                        ])
+                        ->action(function (AssetMovement $record, array $data) {
+                            try {
+                                \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
+                                    $lockedRecord = AssetMovement::where('id', $record->id)->lockForUpdate()->first();
+                                    if ($lockedRecord->status !== 'pending') {
+                                        throw new \Exception('Mutasi ini sudah diproses.');
+                                    }
+                                    request()->merge(['reject_reason' => $data['reject_reason']]);
+                                    $lockedRecord->update([
+                                        'status' => 'rejected',
+                                        'approved_by' => Auth::id(),
+                                    ]);
+                                });
+                                \Filament\Notifications\Notification::make()->title('Mutasi Ditolak')->success()->send();
+                            } catch (\Exception $e) {
+                                \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                    \Filament\Actions\Action::make('complete')
+                        ->label('Selesaikan (Pindah Fisik)')
+                        ->icon('heroicon-o-flag')
+                        ->color('primary')
+                        ->visible(fn (AssetMovement $record) => $record->status === 'approved' && Auth::user()->hasPermissionTo('movements.complete'))
+                        ->requiresConfirmation()
+                        ->action(function (AssetMovement $record) {
+                            try {
+                                \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                                    $lockedRecord = AssetMovement::where('id', $record->id)->lockForUpdate()->first();
+                                    if ($lockedRecord->status !== 'approved') {
+                                        throw new \Exception('Hanya mutasi yang disetujui yang dapat diselesaikan.');
+                                    }
 
-                                \App\Services\AuditLogger::$currentParentId = null;
-                            });
-                            \Filament\Notifications\Notification::make()->title('Mutasi Selesai')->success()->send();
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
-                        }
-                    }),
-                \Filament\Actions\Action::make('printBA')
-                    ->label('Cetak BA')
-                    ->icon('heroicon-o-printer')
-                    ->color('gray')
-                    ->visible(fn (AssetMovement $record) => $record->status === 'completed')
-                    ->url(fn (AssetMovement $record) => route('asset.movement.ba', $record))
-                    ->openUrlInNewTab(),
-                \Filament\Actions\EditAction::make()
-                    ->visible(fn (AssetMovement $record) => $record->status === 'pending'),
+                                    $lockedRecord->update([
+                                        'status' => 'completed',
+                                        'movement_date' => now(),
+                                    ]);
+
+                                    $parentLog = \App\Models\AuditLog::where('auditable_type', get_class($lockedRecord))
+                                        ->where('auditable_id', $lockedRecord->id)
+                                        ->where('action', 'mutation_completed')
+                                        ->latest('id')
+                                        ->first();
+
+                                    if ($parentLog) {
+                                        \App\Services\AuditLogger::$currentParentId = $parentLog->id;
+                                    }
+
+                                    $asset = Asset::where('id', $lockedRecord->asset_id)->lockForUpdate()->first();
+                                    if ($asset) {
+                                        $asset->update([
+                                            'campus_id' => $lockedRecord->destination_campus_id,
+                                            'location_id' => $lockedRecord->destination_location_id,
+                                            'pic_id' => $lockedRecord->destination_pic_id,
+                                        ]);
+                                    }
+
+                                    \App\Services\AuditLogger::$currentParentId = null;
+                                });
+                                \Filament\Notifications\Notification::make()->title('Mutasi Selesai')->success()->send();
+                            } catch (\Exception $e) {
+                                \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                    \Filament\Actions\Action::make('printBA')
+                        ->label('Cetak BA')
+                        ->icon('heroicon-o-printer')
+                        ->color('gray')
+                        ->visible(fn (AssetMovement $record) => $record->status === 'completed')
+                        ->url(fn (AssetMovement $record) => route('asset.movement.ba', $record))
+                        ->openUrlInNewTab(),
+                    \Filament\Actions\EditAction::make()
+                        ->visible(fn (AssetMovement $record) => $record->status === 'pending'),
+                ]),
             ]);
     }
 

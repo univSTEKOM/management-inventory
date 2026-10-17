@@ -139,8 +139,10 @@ class RoleResource extends Resource
                 //
             ])
             ->actions([
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\EditAction::make(),
+                    \Filament\Actions\DeleteAction::make(),
+                ]),
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([
