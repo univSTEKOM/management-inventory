@@ -291,137 +291,139 @@ class MutationResource extends Resource
                     ->label('Pemohon'),
             ])
             ->actions([
-                \Filament\Actions\Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->visible(fn (Mutation $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
-                    ->requiresConfirmation()
-                    ->action(function (Mutation $record) {
-                        try {
-                            \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
-                                $lockedRecord = Mutation::where('id', $record->id)->lockForUpdate()->first();
-                                if ($lockedRecord->status !== 'pending') {
-                                    throw new \Exception('Mutasi ini sudah diproses.');
-                                }
-                                $lockedRecord->update([
-                                    'status' => 'approved',
-                                    'approved_by' => Auth::id(),
-                                ]);
-                            });
-                            \Filament\Notifications\Notification::make()->title('Mutasi Disetujui')->success()->send();
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
-                        }
-                    }),
-                \Filament\Actions\Action::make('reject')
-                    ->label('Reject')
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->visible(fn (Mutation $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
-                    ->requiresConfirmation()
-                    ->form([
-                        \Filament\Forms\Components\Textarea::make('reject_reason')
-                            ->label('Alasan Penolakan')
-                            ->required(),
-                    ])
-                    ->action(function (Mutation $record, array $data) {
-                        try {
-                            \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
-                                $lockedRecord = Mutation::where('id', $record->id)->lockForUpdate()->first();
-                                if ($lockedRecord->status !== 'pending') {
-                                    throw new \Exception('Mutasi ini sudah diproses.');
-                                }
-                                request()->merge(['reject_reason' => $data['reject_reason']]);
-                                $lockedRecord->update([
-                                    'status' => 'rejected',
-                                    'approved_by' => Auth::id(),
-                                ]);
-                            });
-                            \Filament\Notifications\Notification::make()->title('Mutasi Ditolak')->success()->send();
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
-                        }
-                    }),
-                \Filament\Actions\Action::make('complete')
-                    ->label('Selesaikan (Pindah Fisik)')
-                    ->icon('heroicon-o-flag')
-                    ->color('primary')
-                    ->visible(fn (Mutation $record) => $record->status === 'approved' && Auth::user()->hasPermissionTo('movements.complete'))
-                    ->requiresConfirmation()
-                    ->action(function (Mutation $record) {
-                        try {
-                            \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
-                                $lockedRecord = Mutation::where('id', $record->id)->lockForUpdate()->first();
-                                if ($lockedRecord->status !== 'approved') {
-                                    throw new \Exception('Hanya mutasi yang disetujui yang dapat diselesaikan.');
-                                }
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\Action::make('approve')
+                        ->label('Approve')
+                        ->icon('heroicon-o-check')
+                        ->color('success')
+                        ->visible(fn (Mutation $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
+                        ->requiresConfirmation()
+                        ->action(function (Mutation $record) {
+                            try {
+                                \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                                    $lockedRecord = Mutation::where('id', $record->id)->lockForUpdate()->first();
+                                    if ($lockedRecord->status !== 'pending') {
+                                        throw new \Exception('Mutasi ini sudah diproses.');
+                                    }
+                                    $lockedRecord->update([
+                                        'status' => 'approved',
+                                        'approved_by' => Auth::id(),
+                                    ]);
+                                });
+                                \Filament\Notifications\Notification::make()->title('Mutasi Disetujui')->success()->send();
+                            } catch (\Exception $e) {
+                                \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                    \Filament\Actions\Action::make('reject')
+                        ->label('Reject')
+                        ->icon('heroicon-o-x-mark')
+                        ->color('danger')
+                        ->visible(fn (Mutation $record) => $record->status === 'pending' && Auth::user()->hasPermissionTo('movements.approve'))
+                        ->requiresConfirmation()
+                        ->form([
+                            \Filament\Forms\Components\Textarea::make('reject_reason')
+                                ->label('Alasan Penolakan')
+                                ->required(),
+                        ])
+                        ->action(function (Mutation $record, array $data) {
+                            try {
+                                \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
+                                    $lockedRecord = Mutation::where('id', $record->id)->lockForUpdate()->first();
+                                    if ($lockedRecord->status !== 'pending') {
+                                        throw new \Exception('Mutasi ini sudah diproses.');
+                                    }
+                                    request()->merge(['reject_reason' => $data['reject_reason']]);
+                                    $lockedRecord->update([
+                                        'status' => 'rejected',
+                                        'approved_by' => Auth::id(),
+                                    ]);
+                                });
+                                \Filament\Notifications\Notification::make()->title('Mutasi Ditolak')->success()->send();
+                            } catch (\Exception $e) {
+                                \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                    \Filament\Actions\Action::make('complete')
+                        ->label('Selesaikan (Pindah Fisik)')
+                        ->icon('heroicon-o-flag')
+                        ->color('primary')
+                        ->visible(fn (Mutation $record) => $record->status === 'approved' && Auth::user()->hasPermissionTo('movements.complete'))
+                        ->requiresConfirmation()
+                        ->action(function (Mutation $record) {
+                            try {
+                                \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
+                                    $lockedRecord = Mutation::where('id', $record->id)->lockForUpdate()->first();
+                                    if ($lockedRecord->status !== 'approved') {
+                                        throw new \Exception('Hanya mutasi yang disetujui yang dapat diselesaikan.');
+                                    }
 
-                                $lockedRecord->update([
-                                    'status' => 'completed',
-                                    'mutation_date' => now(),
-                                ]);
+                                    $lockedRecord->update([
+                                        'status' => 'completed',
+                                        'mutation_date' => now(),
+                                    ]);
 
-                                $parentLog = \App\Models\AuditLog::where('auditable_type', get_class($lockedRecord))
-                                    ->where('auditable_id', $lockedRecord->id)
-                                    ->where('action', 'mutation_completed')
-                                    ->latest('id')
-                                    ->first();
+                                    $parentLog = \App\Models\AuditLog::where('auditable_type', get_class($lockedRecord))
+                                        ->where('auditable_id', $lockedRecord->id)
+                                        ->where('action', 'mutation_completed')
+                                        ->latest('id')
+                                        ->first();
 
-                                if ($parentLog && class_exists(\App\Services\AuditLogger::class)) {
-                                    \App\Services\AuditLogger::$currentParentId = $parentLog->id;
-                                }
+                                    if ($parentLog && class_exists(\App\Services\AuditLogger::class)) {
+                                        \App\Services\AuditLogger::$currentParentId = $parentLog->id;
+                                    }
 
-                                // Process each item
-                                foreach ($lockedRecord->items as $item) {
-                                    if (in_array($lockedRecord->type, ['asset', 'inventory']) && $item->asset_id) {
-                                        $asset = Asset::where('id', $item->asset_id)->lockForUpdate()->first();
-                                        if ($asset) {
-                                            $asset->update([
+                                    // Process each item
+                                    foreach ($lockedRecord->items as $item) {
+                                        if (in_array($lockedRecord->type, ['asset', 'inventory']) && $item->asset_id) {
+                                            $asset = Asset::where('id', $item->asset_id)->lockForUpdate()->first();
+                                            if ($asset) {
+                                                $asset->update([
+                                                    'campus_id' => $lockedRecord->destination_campus_id,
+                                                    'location_id' => $lockedRecord->destination_location_id,
+                                                    'pic_id' => $lockedRecord->destination_pic_id,
+                                                ]);
+                                            }
+                                        } elseif ($lockedRecord->type === 'consumable' && $item->inventory_balance_id) {
+                                            $sourceBalance = InventoryBalance::where('id', $item->inventory_balance_id)->lockForUpdate()->first();
+                                            if (!$sourceBalance || $sourceBalance->quantity < $item->quantity) {
+                                                throw new \Exception('Stok tidak mencukupi untuk item: ' . ($sourceBalance->name ?? 'Unknown'));
+                                            }
+                                            
+                                            // Deduct from source
+                                            $sourceBalance->quantity -= $item->quantity;
+                                            $sourceBalance->save();
+                                            
+                                            // Find or create destination balance
+                                            $destBalance = InventoryBalance::lockForUpdate()->firstOrCreate([
+                                                'category_id' => $sourceBalance->category_id,
+                                                'name' => $sourceBalance->name,
                                                 'campus_id' => $lockedRecord->destination_campus_id,
                                                 'location_id' => $lockedRecord->destination_location_id,
+                                            ], [
+                                                'quantity' => 0,
+                                                'status' => $sourceBalance->status ?? 'stock',
+                                                'kondisi' => $sourceBalance->kondisi ?? 'good',
                                                 'pic_id' => $lockedRecord->destination_pic_id,
                                             ]);
+                                            
+                                            $destBalance->quantity += $item->quantity;
+                                            $destBalance->save();
                                         }
-                                    } elseif ($lockedRecord->type === 'consumable' && $item->inventory_balance_id) {
-                                        $sourceBalance = InventoryBalance::where('id', $item->inventory_balance_id)->lockForUpdate()->first();
-                                        if (!$sourceBalance || $sourceBalance->quantity < $item->quantity) {
-                                            throw new \Exception('Stok tidak mencukupi untuk item: ' . ($sourceBalance->name ?? 'Unknown'));
-                                        }
-                                        
-                                        // Deduct from source
-                                        $sourceBalance->quantity -= $item->quantity;
-                                        $sourceBalance->save();
-                                        
-                                        // Find or create destination balance
-                                        $destBalance = InventoryBalance::lockForUpdate()->firstOrCreate([
-                                            'category_id' => $sourceBalance->category_id,
-                                            'name' => $sourceBalance->name,
-                                            'campus_id' => $lockedRecord->destination_campus_id,
-                                            'location_id' => $lockedRecord->destination_location_id,
-                                        ], [
-                                            'quantity' => 0,
-                                            'status' => $sourceBalance->status ?? 'stock',
-                                            'kondisi' => $sourceBalance->kondisi ?? 'good',
-                                            'pic_id' => $lockedRecord->destination_pic_id,
-                                        ]);
-                                        
-                                        $destBalance->quantity += $item->quantity;
-                                        $destBalance->save();
                                     }
-                                }
 
-                                if (class_exists(\App\Services\AuditLogger::class)) {
-                                    \App\Services\AuditLogger::$currentParentId = null;
-                                }
-                            });
-                            \Filament\Notifications\Notification::make()->title('Mutasi Selesai')->success()->send();
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
-                        }
-                    }),
-                \Filament\Actions\EditAction::make()
-                    ->visible(fn (Mutation $record) => $record->status === 'pending'),
+                                    if (class_exists(\App\Services\AuditLogger::class)) {
+                                        \App\Services\AuditLogger::$currentParentId = null;
+                                    }
+                                });
+                                \Filament\Notifications\Notification::make()->title('Mutasi Selesai')->success()->send();
+                            } catch (\Exception $e) {
+                                \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
+                            }
+                        }),
+                    \Filament\Actions\EditAction::make()
+                        ->visible(fn (Mutation $record) => $record->status === 'pending'),
+                ]),
             ]);
     }
 

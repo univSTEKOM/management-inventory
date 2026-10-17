@@ -97,12 +97,13 @@ class StockOpnameResource extends Resource
                     ->date(),
             ])
             ->actions([
-                \Filament\Actions\Action::make('start')
-                    ->label('Mulai Pemeriksaan')
-                    ->icon('heroicon-o-play')
-                    ->color('warning')
-                    ->visible(fn (StockOpname $record) => $record->status === 'draft')
-                    ->requiresConfirmation()
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\Action::make('start')
+                        ->label('Mulai Pemeriksaan')
+                        ->icon('heroicon-o-play')
+                        ->color('warning')
+                        ->visible(fn (StockOpname $record) => $record->status === 'draft')
+                        ->requiresConfirmation()
                     ->action(function (StockOpname $record) {
                         try {
                             \Illuminate\Support\Facades\DB::transaction(function () use ($record) {
@@ -179,8 +180,9 @@ class StockOpnameResource extends Resource
                             \Filament\Notifications\Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
                         }
                     }),
-                \Filament\Actions\EditAction::make()
-                    ->visible(fn (StockOpname $record) => $record->status === 'draft'),
+                    \Filament\Actions\EditAction::make()
+                        ->visible(fn (StockOpname $record) => $record->status === 'draft'),
+                ]),
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([

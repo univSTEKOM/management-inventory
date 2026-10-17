@@ -38,6 +38,8 @@ class AddPhotoActions
     {
         return BulkAction::make('addPhotoBulk')
             ->label('Tambah Foto Massal')
+            ->hiddenLabel()
+            ->tooltip('Tambah Foto Massal')
             ->icon('heroicon-o-camera')
             ->color('success')
             ->visible(fn () => ItemPhotoService::userCanManage(Auth::user()))

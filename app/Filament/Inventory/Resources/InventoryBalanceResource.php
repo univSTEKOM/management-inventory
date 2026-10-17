@@ -106,7 +106,8 @@ class InventoryBalanceResource extends Resource
                 //
             ])
             ->actions([
-                \Filament\Actions\Action::make('edit_info')
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\Action::make('edit_info')
                     ->label('Edit')
                     ->icon('heroicon-o-pencil-square')
                     ->color('gray')
@@ -270,6 +271,7 @@ class InventoryBalanceResource extends Resource
                         }
                     })
                     ->visible(fn (InventoryBalance $record): bool => $record->quantity > 0),
+                ]),
             ])
             // Centang tetap ada saat search/filter berubah. Tautan "Pilih semua N
             // data" dimatikan, karena tanpa filter-ulang ia bisa memilih seluruh tabel.

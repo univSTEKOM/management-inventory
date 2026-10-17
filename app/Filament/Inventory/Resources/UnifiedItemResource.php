@@ -242,33 +242,34 @@ class UnifiedItemResource extends Resource
                     }),
             ])
             ->actions([
-                \App\Filament\Support\AddPhotoActions::rowAction(),
-                \Filament\Actions\Action::make('filterSameBrand')
-                    ->label('Merk/tipe sama')
-                    ->tooltip('Tampilkan barang dengan merk/tipe sama')
-                    ->icon('heroicon-o-funnel')
-                    ->color('gray')
-                    ->iconButton()
-                    ->visible(fn (UnifiedItem $record): bool => filled($record->brand))
-                    ->action(function (UnifiedItem $record, \Livewire\Component $livewire): void {
-                        // Hanya memfilter daftar; pengguna tetap memeriksa & mencentang sendiri.
-                        $livewire->tableFilters['brand'] = ['value' => $record->brand];
-                        $livewire->updatedTableFilters();
-                    }),
-                \Filament\Actions\Action::make('manage')
-                    ->label('Kelola / Detail')
-                    ->icon('heroicon-o-arrow-right-circle')
-                    ->url(function (UnifiedItem $record) {
-                        if ($record->row_type === 'supply') {
-                            return \App\Filament\Inventory\Resources\InventoryBalanceResource::getUrl('index', ['tableSearch' => $record->item_name]);
-                        } else {
-                            if (strtolower($record->classification_name) === 'aset') {
-                                return \App\Filament\Inventory\Resources\AssetCategoryResource::getUrl('view', ['record' => $record->route_key]);
+                \Filament\Actions\ActionGroup::make([
+                    \Filament\Actions\Action::make('manage')
+                        ->label('Kelola / Detail')
+                        ->icon('heroicon-o-arrow-right-circle')
+                        ->url(function (UnifiedItem $record) {
+                            if ($record->row_type === 'supply') {
+                                return \App\Filament\Inventory\Resources\InventoryBalanceResource::getUrl('index', ['tableSearch' => $record->item_name]);
                             } else {
-                                return \App\Filament\Inventory\Resources\InventoryCategoryResource::getUrl('view', ['record' => $record->route_key]);
+                                if (strtolower($record->classification_name) === 'aset') {
+                                    return \App\Filament\Inventory\Resources\AssetCategoryResource::getUrl('view', ['record' => $record->route_key]);
+                                } else {
+                                    return \App\Filament\Inventory\Resources\InventoryCategoryResource::getUrl('view', ['record' => $record->route_key]);
+                                }
                             }
-                        }
-                    })
+                        }),
+                    \App\Filament\Support\AddPhotoActions::rowAction(),
+                    \Filament\Actions\Action::make('filterSameBrand')
+                        ->label('Merk/tipe sama')
+                        ->tooltip('Tampilkan barang dengan merk/tipe sama')
+                        ->icon('heroicon-o-funnel')
+                        ->color('gray')
+                        ->visible(fn (UnifiedItem $record): bool => filled($record->brand))
+                        ->action(function (UnifiedItem $record, \Livewire\Component $livewire): void {
+                            // Hanya memfilter daftar; pengguna tetap memeriksa & mencentang sendiri.
+                            $livewire->tableFilters['brand'] = ['value' => $record->brand];
+                            $livewire->updatedTableFilters();
+                        }),
+                ]),
             ])
             // Centang tetap ada saat search/filter berubah. Tautan "Pilih semua N
             // data" dimatikan, karena tanpa filter-ulang ia bisa memilih seluruh tabel.
