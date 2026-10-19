@@ -2,6 +2,8 @@
 
 namespace App\Filament\Support;
 
+use App\Models\Asset;
+use App\Models\InventoryBalance;
 use App\Models\UnifiedItem;
 use App\Services\ItemPhotoResult;
 use App\Services\ItemPhotoService;
@@ -15,6 +17,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Throwable;
 
@@ -137,6 +140,93 @@ class AddPhotoActions
             })
             ->modalSubmitActionLabel('Simpan Foto')
             ->modalCancelActionLabel('Batal');
+    }
+
+    /**
+     * Aksi baris: modal galeri foto dengan opsi "Buka di Tab Baru" dan "Unduh".
+     * Hanya tampil jika barang sudah memiliki foto (has_photo = true).
+     */
+    public static function viewPhotoAction(): Action
+    {
+        return Action::make('viewPhoto')
+            ->label('Lihat Foto')
+            ->icon('heroicon-o-photo')
+            ->color('info')
+            ->visible(fn (UnifiedItem $record) => (bool) $record->has_photo)
+            ->modalHeading(fn (UnifiedItem $record) => 'Foto: '.$record->item_name)
+            ->modalWidth('2xl')
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Tutup')
+            ->schema(fn (UnifiedItem $record): array => [
+                Placeholder::make('photos_gallery')
+                    ->hiddenLabel()
+                    ->content(static::buildPhotoGalleryHtml($record)),
+            ]);
+    }
+
+    /**
+     * Bangun HTML galeri foto untuk modal viewPhotoAction.
+     * Asset → asset_photos table. Supply → inventory_balances.photo column.
+     */
+    protected static function buildPhotoGalleryHtml(UnifiedItem $record): HtmlString
+    {
+        $urls = [];
+
+        if ($record->row_type === 'asset') {
+            $photos = Asset::find((int) $record->raw_id)?->photos()->orderBy('sort_order')->get(['file_path']) ?? collect();
+            foreach ($photos as $photo) {
+                if (filled($photo->file_path)) {
+                    $urls[] = [
+                        'thumb' => Storage::disk('s3_thumb')->url($photo->file_path),
+                        'full' => Storage::disk('s3')->url($photo->file_path),
+                    ];
+                }
+            }
+        } else {
+            $balance = InventoryBalance::find((int) $record->raw_id);
+            if ($balance && filled($balance->photo)) {
+                $urls[] = [
+                    'thumb' => Storage::disk('s3_thumb')->url($balance->photo),
+                    'full' => Storage::disk('s3')->url($balance->photo),
+                ];
+            }
+        }
+
+        if (empty($urls)) {
+            return new HtmlString('<p class="text-gray-500 text-sm">Foto tidak ditemukan.</p>');
+        }
+
+        $cards = '';
+        foreach ($urls as $i => $url) {
+            $num = $i + 1;
+            $escaped_thumb = e($url['thumb']);
+            $escaped_full = e($url['full']);
+            $cards .= <<<HTML
+            <div class="flex flex-col gap-2 items-center">
+                <a href="{$escaped_full}" target="_blank" rel="noopener noreferrer" class="block w-full overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 hover:opacity-90 transition-opacity">
+                    <img src="{$escaped_thumb}" alt="Foto {$num}" class="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900" loading="lazy">
+                </a>
+                <div class="flex gap-2 w-full">
+                    <a href="{$escaped_full}" target="_blank" rel="noopener noreferrer"
+                        class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        Buka
+                    </a>
+                    <a href="{$escaped_full}" download
+                        class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Unduh
+                    </a>
+                </div>
+            </div>
+            HTML;
+        }
+
+        $cols = count($urls) === 1 ? 'grid-cols-1' : 'grid-cols-2';
+
+        return new HtmlString(
+            "<div class=\"grid {$cols} gap-4 py-2\">{$cards}</div>"
+        );
     }
 
     protected static function photoUpload(int $maxFiles, bool $mentionSupplyLimit = false): FileUpload

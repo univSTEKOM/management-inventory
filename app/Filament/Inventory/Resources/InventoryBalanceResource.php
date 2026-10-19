@@ -2,31 +2,43 @@
 
 namespace App\Filament\Inventory\Resources;
 
-use App\Filament\Inventory\Resources\InventoryBalanceResource\Pages;
-use App\Filament\Inventory\Resources\SupplyCategoryResource;
-use App\Models\InventoryBalance;
-use App\Models\AuditLog;
 use App\Enums\AuditAction;
+use App\Filament\Inventory\Resources\InventoryBalanceResource\Pages;
+use App\Filament\Support\ChangeCategoryActions;
+use App\Filament\Support\DeleteItemsActions;
+use App\Filament\Support\MoveLocationActions;
+use App\Models\AuditLog;
+use App\Models\InventoryBalance;
+use App\Models\InventoryBalanceUnit;
+use App\Models\PurchaseItem;
+use App\Support\SharedPhotoFiles;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
-use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class InventoryBalanceResource extends Resource
 {
     protected static ?string $model = InventoryBalance::class;
+
     protected static ?int $navigationSort = 4;
 
-    public static function getNavigationIcon(): string | \Illuminate\Contracts\Support\Htmlable | null
+    public static function getNavigationIcon(): string|Htmlable|null
     {
         return 'heroicon-o-archive-box';
     }
 
-    public static function getNavigationGroup(): string | \UnitEnum | null
+    public static function getNavigationGroup(): string|\UnitEnum|null
     {
         return 'Pengelolaan Barang';
     }
@@ -56,7 +68,10 @@ class InventoryBalanceResource extends Resource
                     ->height(48)
                     ->width(48)
                     ->defaultImageUrl(null)
-                    ->extraImgAttributes(['class' => 'rounded-md object-cover'])
+                    ->extraImgAttributes(['class' => 'rounded-md object-cover cursor-pointer'])
+                    ->url(fn ($record) => $record->photo
+                        ? Storage::disk('s3')->url($record->photo)
+                        : null, true)
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Barang')
@@ -106,171 +121,170 @@ class InventoryBalanceResource extends Resource
                 //
             ])
             ->actions([
-                \Filament\Actions\ActionGroup::make([
-                    \Filament\Actions\Action::make('edit_info')
-                    ->label('Edit')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('gray')
-                    ->modalHeading(fn (InventoryBalance $record) => 'Edit: ' . $record->name)
-                    ->fillForm(fn (InventoryBalance $record): array => [
-                        'name'        => $record->name,
-                        'brand'       => $record->brand,
-                        'location_id' => $record->location_id,
-                        'campus_id'   => $record->campus_id,
-                        'pic_id'      => $record->pic_id,
-                        'photo'       => $record->photo,
-                    ])
-                    ->form([
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nama Barang')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('brand')
-                            ->label('Merk / Tipe')
-                            ->maxLength(255),
-                        Forms\Components\Select::make('campus_id')
-                            ->label('Gedung / Kampus')
-                            ->relationship('campus', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->afterStateUpdated(fn ($set) => $set('location_id', null)),
-                        Forms\Components\Select::make('location_id')
-                            ->label('Ruangan / Lokasi')
-                            ->relationship('location', 'name')
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('pic_id')
-                            ->label('PIC (Penanggungjawab)')
-                            ->relationship('pic', 'name')
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\FileUpload::make('photo')
-                            ->label('Foto Barang')
-                            ->image()
-                            ->disk('s3')
-                            ->directory('inventory-photos')
-                            ->imageEditor()
-                            ->imageResizeMode('contain')
-                            ->imageResizeTargetWidth('1200')
-                            ->imageResizeTargetHeight('1200')
-                            ->maxSize(5120)
-                            ->panelLayout('integrated')
-                            ->helperText('Satu foto representatif untuk jenis barang ini (maks 5MB).')
-                            ->columnSpanFull(),
-                    ])
-                    ->action(function (InventoryBalance $record, array $data): void {
-                        $photoState = $data['photo'] ?? [];
-                        // FileUpload multiple=false tapi fillForm pakai array, normalize:
-                        $newPhoto = is_array($photoState) ? (reset($photoState) ?: null) : ($photoState ?: null);
+                ActionGroup::make([
+                    Action::make('edit_info')
+                        ->label('Edit')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('gray')
+                        ->modalHeading(fn (InventoryBalance $record) => 'Edit: '.$record->name)
+                        ->fillForm(fn (InventoryBalance $record): array => [
+                            'name' => $record->name,
+                            'brand' => $record->brand,
+                            'location_id' => $record->location_id,
+                            'campus_id' => $record->campus_id,
+                            'pic_id' => $record->pic_id,
+                            'photo' => $record->photo,
+                        ])
+                        ->form([
+                            Forms\Components\TextInput::make('name')
+                                ->label('Nama Barang')
+                                ->required()
+                                ->maxLength(255),
+                            Forms\Components\TextInput::make('brand')
+                                ->label('Merk / Tipe')
+                                ->maxLength(255),
+                            Forms\Components\Select::make('campus_id')
+                                ->label('Gedung / Kampus')
+                                ->relationship('campus', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->live()
+                                ->afterStateUpdated(fn ($set) => $set('location_id', null)),
+                            Forms\Components\Select::make('location_id')
+                                ->label('Ruangan / Lokasi')
+                                ->relationship('location', 'name')
+                                ->searchable()
+                                ->preload(),
+                            Forms\Components\Select::make('pic_id')
+                                ->label('PIC (Penanggungjawab)')
+                                ->relationship('pic', 'name')
+                                ->searchable()
+                                ->preload(),
+                            Forms\Components\FileUpload::make('photo')
+                                ->label('Foto Barang')
+                                ->image()
+                                ->disk('s3')
+                                ->directory('inventory-photos')
+                                ->imageEditor()
+                                ->imageResizeMode('contain')
+                                ->imageResizeTargetWidth('1200')
+                                ->imageResizeTargetHeight('1200')
+                                ->maxSize(5120)
+                                ->panelLayout('integrated')
+                                ->helperText('Satu foto representatif untuk jenis barang ini (maks 5MB).')
+                                ->columnSpanFull(),
+                        ])
+                        ->action(function (InventoryBalance $record, array $data): void {
+                            $photoState = $data['photo'] ?? [];
+                            // FileUpload multiple=false tapi fillForm pakai array, normalize:
+                            $newPhoto = is_array($photoState) ? (reset($photoState) ?: null) : ($photoState ?: null);
 
-                        // Hapus foto lama dari S3 jika diganti, kecuali file-nya
-                        // masih dipakai barang lain (foto massal).
-                        if ($record->photo && $newPhoto !== $record->photo) {
-                            \App\Support\SharedPhotoFiles::deleteIfUnreferenced($record->photo, ['s3'], exceptBalanceId: $record->id);
-                        }
+                            // Hapus foto lama dari S3 jika diganti, kecuali file-nya
+                            // masih dipakai barang lain (foto massal).
+                            if ($record->photo && $newPhoto !== $record->photo) {
+                                SharedPhotoFiles::deleteIfUnreferenced($record->photo, ['s3'], exceptBalanceId: $record->id);
+                            }
 
-                        $record->update(array_merge(
-                            \Illuminate\Support\Arr::except($data, ['photo']),
-                            ['photo' => $newPhoto],
-                        ));
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('Berhasil diperbarui')
-                            ->success()
-                            ->send();
-                    }),
-
-                \Filament\Actions\Action::make('stock_out')
-                    ->label('Gunakan Stok')
-                    ->icon('heroicon-o-minus-circle')
-                    ->color('warning')
-                    ->form([
-                        Forms\Components\Select::make('sub_barcodes')
-                            ->label('Scan/Pilih Barcode Unit')
-                            ->multiple()
-                            ->searchable()
-                            ->options(fn (InventoryBalance $record) => 
-                                $record->units()->where('status', 'available')->pluck('sub_barcode', 'sub_barcode')
-                            )
-                            ->required()
-                            ->minItems(1)
-                            ->maxItems(fn (InventoryBalance $record) => $record->quantity)
-                            ->helperText('Pilih unit spesifik yang akan dikeluarkan.'),
-                        Forms\Components\Textarea::make('reason')
-                            ->label('Alasan / Tujuan Penggunaan')
-                            ->required(),
-                    ])
-                    ->action(function (InventoryBalance $record, array $data) {
-                        $subBarcodes = $data['sub_barcodes'];
-                        $quantity = count($subBarcodes);
-                        $reason = $data['reason'] ?? '';
-
-                        try {
-                            DB::transaction(function () use ($record, $subBarcodes, $quantity, $reason) {
-                                // 1. Pessimistic Locking on Balance
-                                $lockedBalance = InventoryBalance::where('id', $record->id)->lockForUpdate()->first();
-
-                                // 2. Lock and check units
-                                $lockedUnits = \App\Models\InventoryBalanceUnit::where('inventory_balance_id', $record->id)
-                                    ->whereIn('sub_barcode', $subBarcodes)
-                                    ->lockForUpdate()
-                                    ->get();
-                                
-                                if ($lockedUnits->count() !== $quantity) {
-                                    throw new \Exception("Beberapa barcode tidak valid atau bukan milik master barang ini.");
-                                }
-                                
-                                $usedUnits = $lockedUnits->where('status', '!=', 'available');
-                                if ($usedUnits->count() > 0) {
-                                    throw new \Exception("Beberapa barcode sudah digunakan (Stock OUT) atau tidak tersedia.");
-                                }
-
-                                // 3. Update Units
-                                \App\Models\InventoryBalanceUnit::whereIn('id', $lockedUnits->pluck('id'))->update(['status' => 'used']);
-
-                                $oldQuantity = $lockedBalance->quantity;
-                                $newQuantity = $oldQuantity - $quantity;
-                                
-                                if ($newQuantity < 0) {
-                                    throw new \Exception("Stok tidak mencukupi. Stok saat ini: {$oldQuantity}");
-                                }
-
-                                // 4. Decrement Balance
-                                $lockedBalance->quantity = $newQuantity;
-                                $lockedBalance->save();
-
-                                // 5. Audit Trail
-                                AuditLog::create([
-                                    'action' => AuditAction::UPDATED,
-                                    'auditable_type' => InventoryBalance::class,
-                                    'auditable_id' => $record->id,
-                                    'user_id' => Auth::id(),
-                                    'old_values' => ['quantity' => $oldQuantity],
-                                    'new_values' => ['quantity' => $newQuantity],
-                                    'metadata' => [
-                                        'reason' => $reason,
-                                        'usage_quantity' => $quantity,
-                                        'sub_barcodes' => $subBarcodes,
-                                        'transaction_type' => 'stock_out'
-                                    ],
-                                ]);
-                            });
+                            $record->update(array_merge(
+                                Arr::except($data, ['photo']),
+                                ['photo' => $newPhoto],
+                            ));
 
                             Notification::make()
-                                ->title('Berhasil')
-                                ->body("Stok berhasil dikeluarkan sebanyak {$quantity} unit.")
+                                ->title('Berhasil diperbarui')
                                 ->success()
                                 ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->title('Gagal')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    })
-                    ->visible(fn (InventoryBalance $record): bool => $record->quantity > 0),
+                        }),
+
+                    Action::make('stock_out')
+                        ->label('Gunakan Stok')
+                        ->icon('heroicon-o-minus-circle')
+                        ->color('warning')
+                        ->form([
+                            Forms\Components\Select::make('sub_barcodes')
+                                ->label('Scan/Pilih Barcode Unit')
+                                ->multiple()
+                                ->searchable()
+                                ->options(fn (InventoryBalance $record) => $record->units()->where('status', 'available')->pluck('sub_barcode', 'sub_barcode')
+                                )
+                                ->required()
+                                ->minItems(1)
+                                ->maxItems(fn (InventoryBalance $record) => $record->quantity)
+                                ->helperText('Pilih unit spesifik yang akan dikeluarkan.'),
+                            Forms\Components\Textarea::make('reason')
+                                ->label('Alasan / Tujuan Penggunaan')
+                                ->required(),
+                        ])
+                        ->action(function (InventoryBalance $record, array $data) {
+                            $subBarcodes = $data['sub_barcodes'];
+                            $quantity = count($subBarcodes);
+                            $reason = $data['reason'] ?? '';
+
+                            try {
+                                DB::transaction(function () use ($record, $subBarcodes, $quantity, $reason) {
+                                    // 1. Pessimistic Locking on Balance
+                                    $lockedBalance = InventoryBalance::where('id', $record->id)->lockForUpdate()->first();
+
+                                    // 2. Lock and check units
+                                    $lockedUnits = InventoryBalanceUnit::where('inventory_balance_id', $record->id)
+                                        ->whereIn('sub_barcode', $subBarcodes)
+                                        ->lockForUpdate()
+                                        ->get();
+
+                                    if ($lockedUnits->count() !== $quantity) {
+                                        throw new \Exception('Beberapa barcode tidak valid atau bukan milik master barang ini.');
+                                    }
+
+                                    $usedUnits = $lockedUnits->where('status', '!=', 'available');
+                                    if ($usedUnits->count() > 0) {
+                                        throw new \Exception('Beberapa barcode sudah digunakan (Stock OUT) atau tidak tersedia.');
+                                    }
+
+                                    // 3. Update Units
+                                    InventoryBalanceUnit::whereIn('id', $lockedUnits->pluck('id'))->update(['status' => 'used']);
+
+                                    $oldQuantity = $lockedBalance->quantity;
+                                    $newQuantity = $oldQuantity - $quantity;
+
+                                    if ($newQuantity < 0) {
+                                        throw new \Exception("Stok tidak mencukupi. Stok saat ini: {$oldQuantity}");
+                                    }
+
+                                    // 4. Decrement Balance
+                                    $lockedBalance->quantity = $newQuantity;
+                                    $lockedBalance->save();
+
+                                    // 5. Audit Trail
+                                    AuditLog::create([
+                                        'action' => AuditAction::UPDATED,
+                                        'auditable_type' => InventoryBalance::class,
+                                        'auditable_id' => $record->id,
+                                        'user_id' => Auth::id(),
+                                        'old_values' => ['quantity' => $oldQuantity],
+                                        'new_values' => ['quantity' => $newQuantity],
+                                        'metadata' => [
+                                            'reason' => $reason,
+                                            'usage_quantity' => $quantity,
+                                            'sub_barcodes' => $subBarcodes,
+                                            'transaction_type' => 'stock_out',
+                                        ],
+                                    ]);
+                                });
+
+                                Notification::make()
+                                    ->title('Berhasil')
+                                    ->body("Stok berhasil dikeluarkan sebanyak {$quantity} unit.")
+                                    ->success()
+                                    ->send();
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->title('Gagal')
+                                    ->body($e->getMessage())
+                                    ->danger()
+                                    ->send();
+                            }
+                        })
+                        ->visible(fn (InventoryBalance $record): bool => $record->quantity > 0),
                 ]),
             ])
             // Centang tetap ada saat search/filter berubah. Tautan "Pilih semua N
@@ -278,21 +292,21 @@ class InventoryBalanceResource extends Resource
             ->deselectAllRecordsWhenFiltered(false)
             ->selectCurrentPageOnly()
             ->bulkActions([
-                \App\Filament\Support\MoveLocationActions::bulkAction(),
-                \App\Filament\Support\ChangeCategoryActions::bulkAction(),
-                \App\Filament\Support\DeleteItemsActions::bulkAction(),
+                MoveLocationActions::bulkAction(),
+                ChangeCategoryActions::bulkAction(),
+                DeleteItemsActions::bulkAction(),
             ]);
     }
 
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
             ->addSelect([
-                'last_unit' => \App\Models\PurchaseItem::select('unit')
+                'last_unit' => PurchaseItem::select('unit')
                     ->whereColumn('inventory_balance_id', 'inventory_balances.id')
                     ->whereNotNull('unit')
                     ->orderByDesc('id')
-                    ->limit(1)
+                    ->limit(1),
             ]);
     }
 

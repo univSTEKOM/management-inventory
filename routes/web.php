@@ -7,7 +7,13 @@ use App\Models\AssetMovement;
 use App\Services\BeritaAcaraService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
+use Intervention\Image\ImageManager;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -56,23 +62,55 @@ Route::get('/checklist/print', function (Request $request) {
 })->name('checklist.print')->middleware('auth');
 
 Route::get('/asset-photo-thumb/{path}', function (string $path) {
-    $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default', 's3'));
-    if (!$disk->exists($path)) {
-        abort(404);
+    $disk = Storage::disk(config('filesystems.default', 's3'));
+    if (! $disk->exists($path)) {
+        if (Storage::disk('public')->exists($path)) {
+            $disk = Storage::disk('public');
+        } else {
+            abort(404);
+        }
     }
-    
-    $cacheKey = 'thumb_' . md5($path);
-    $imgData = \Illuminate\Support\Facades\Cache::rememberForever($cacheKey, function () use ($disk, $path) {
+
+    $cacheKey = 'thumb_b64_'.md5($path);
+    $base64Data = Cache::rememberForever($cacheKey, function () use ($disk, $path) {
         try {
-            $manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
-            $image = $manager->read($disk->get($path));
-            return $image->scale(down: true, width: 400)->toJpeg(75)->toString();
-        } catch (\Exception $e) {
-            return $disk->get($path);
+            $manager = new ImageManager(new Driver);
+            $image = $manager->decode($disk->get($path));
+            $image->scaleDown(width: 400);
+            $raw = (string) $image->encode(new JpegEncoder(quality: 75));
+
+            return base64_encode($raw);
+        } catch (Throwable $e) {
+            return base64_encode($disk->get($path));
         }
     });
 
-    return response($imgData, 200)
+    return response(base64_decode($base64Data), 200)
         ->header('Content-Type', 'image/jpeg')
         ->header('Cache-Control', 'public, max-age=31536000');
 })->where('path', '.*')->name('asset.photo.thumb');
+
+Route::get('/asset-photo-download/{path}', function (Request $request, string $path) {
+    $disk = Storage::disk(config('filesystems.default', 's3'));
+    if (! $disk->exists($path)) {
+        if (Storage::disk('public')->exists($path)) {
+            $disk = Storage::disk('public');
+        } else {
+            abort(404, 'File foto tidak ditemukan.');
+        }
+    }
+
+    $ext = pathinfo($path, PATHINFO_EXTENSION) ?: 'jpg';
+    $customName = $request->query('name');
+    $downloadName = $customName ? (Str::slug($customName, '_').'.'.$ext) : basename($path);
+
+    return response()->streamDownload(function () use ($disk, $path) {
+        $stream = $disk->readStream($path);
+        if (is_resource($stream)) {
+            fpassthru($stream);
+            fclose($stream);
+        }
+    }, $downloadName, [
+        'Content-Type' => $disk->mimeType($path) ?: 'application/octet-stream',
+    ]);
+})->where('path', '.*')->name('asset.photo.download')->middleware('auth');

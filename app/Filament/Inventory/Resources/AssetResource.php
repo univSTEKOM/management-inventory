@@ -3,23 +3,59 @@
 namespace App\Filament\Inventory\Resources;
 
 use App\Filament\Inventory\Resources\AssetResource\Pages;
+use App\Filament\Support\AddPhotoActions;
+use App\Filament\Support\ChangeCategoryActions;
+use App\Filament\Support\ChangeKondisiActions;
+use App\Filament\Support\ChangeStatusActions;
+use App\Filament\Support\DeleteItemsActions;
+use App\Filament\Support\MoveLocationActions;
+use App\Filament\Support\PrintBarcodeActions;
+use App\Filament\Support\PrintChecklistActions;
+use App\Models\ApprovalRequest;
 use App\Models\Asset;
-use Filament\Schemas\Schema;
+use App\Models\Campus;
+use App\Models\Category;
+use App\Models\Classification;
+use App\Models\Location;
+use App\Models\PurchaseItem;
+use App\Services\DepreciationService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ForceDeleteAction;
+use Filament\Actions\ForceDeleteBulkAction;
+use Filament\Actions\RestoreAction;
+use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components;
+use Filament\Forms\Components\Hidden;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 
 class AssetResource extends Resource
 {
     protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $model = Asset::class;
 
-    public static function getNavigationIcon(): string | \Illuminate\Contracts\Support\Htmlable | null
+    public static function getNavigationIcon(): string|Htmlable|null
     {
         return 'heroicon-o-cube';
     }
@@ -45,7 +81,7 @@ class AssetResource extends Resource
             : Response::deny();
     }
 
-    public static function getNavigationGroup(): string | \UnitEnum | null
+    public static function getNavigationGroup(): string|\UnitEnum|null
     {
         return 'Asset Management';
     }
@@ -62,12 +98,13 @@ class AssetResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $classifications = \Illuminate\Support\Facades\Cache::remember('classifications_slug_map', 3600, function () {
-            return \App\Models\Classification::pluck('slug', 'id')->toArray();
+        $classifications = Cache::remember('classifications_slug_map', 3600, function () {
+            return Classification::pluck('slug', 'id')->toArray();
         });
-        
+
         $getSlug = function (callable $get) use ($classifications) {
             $id = $get('classification_id');
+
             return $id ? ($classifications[$id] ?? null) : null;
         };
         $isPersediaan = fn (callable $get) => strtolower($getSlug($get) ?? '') === 'barang-habis-pakai';
@@ -76,10 +113,10 @@ class AssetResource extends Resource
 
         return $schema
             ->components([
-                \Filament\Schemas\Components\Section::make('Info Laporan')
+                Section::make('Info Laporan')
                     ->description('Detail laporan barang datang dari lapangan, buat bantu tentukan klasifikasi.')
                     ->schema([
-                        \Filament\Schemas\Components\Grid::make(4)
+                        Grid::make(4)
                             ->schema([
                                 Components\FileUpload::make('foto_resi')
                                     ->label('Foto Resi')
@@ -91,14 +128,14 @@ class AssetResource extends Resource
                                     ->openable()
                                     ->downloadable()
                                     ->hintAction(
-                                        \Filament\Actions\Action::make('view_image')
+                                        Action::make('view_image')
                                             ->label('Buka Foto')
                                             ->icon('heroicon-m-arrow-top-right-on-square')
-                                            ->url(fn ($record) => $record?->foto_resi ? \Illuminate\Support\Facades\Storage::disk('s3')->url($record->foto_resi) : null, true)
+                                            ->url(fn ($record) => $record?->foto_resi ? Storage::disk('s3')->url($record->foto_resi) : null, true)
                                             ->visible(fn ($record) => filled($record?->foto_resi))
                                     )
                                     ->columnSpan(1),
-                                \Filament\Schemas\Components\Group::make()
+                                Group::make()
                                     ->schema([
                                         Components\Placeholder::make('keterangan_preview')
                                             ->label('Keterangan')
@@ -116,12 +153,12 @@ class AssetResource extends Resource
                     ])
                     ->visible(fn ($record) => $record !== null && filled($record->reported_by)),
 
-                \Filament\Schemas\Components\Section::make('Klasifikasi Barang')
+                Section::make('Klasifikasi Barang')
                     ->description('Pilih klasifikasi barang terlebih dahulu untuk menyesuaikan formulir.')
                     ->schema([
                         Components\ToggleButtons::make('classification_id')
                             ->hiddenLabel()
-                            ->options(\App\Models\Classification::pluck('name', 'id'))
+                            ->options(Classification::pluck('name', 'id'))
                             ->inline()
                             ->required()
                             ->live()
@@ -129,7 +166,7 @@ class AssetResource extends Resource
                             ->disabled(fn ($record) => $record !== null && $record->classification_id !== null),
                     ]),
 
-                \Filament\Schemas\Components\Section::make('Identitas Barang')
+                Section::make('Identitas Barang')
                     ->schema([
                         Components\Select::make('category_id')
                             ->label('Kategori')
@@ -147,10 +184,11 @@ class AssetResource extends Resource
                                 Components\TextInput::make('code')->label('Kode Kategori')->unique('categories', 'code'),
                             ])
                             ->createOptionUsing(function (array $data, callable $get) {
-                                $category = \App\Models\Category::create($data);
+                                $category = Category::create($data);
                                 if ($classificationId = $get('classification_id')) {
                                     $category->classifications()->attach($classificationId);
                                 }
+
                                 return $category->getKey();
                             })
                             ->required()
@@ -166,13 +204,16 @@ class AssetResource extends Resource
                             ->label('Merk/Tipe')
                             ->searchable()
                             ->options(function (callable $get) {
-                                $options = \App\Models\Asset::whereNotNull('brand')->distinct()->pluck('brand', 'brand')->toArray();
+                                $options = Asset::whereNotNull('brand')->distinct()->pluck('brand', 'brand')->toArray();
                                 $current = $get('brand');
-                                if ($current && !isset($options[$current])) $options[$current] = $current;
+                                if ($current && ! isset($options[$current])) {
+                                    $options[$current] = $current;
+                                }
+
                                 return $options;
                             })
                             ->createOptionForm([
-                                Components\TextInput::make('brand')->label('Merk/Tipe Baru')->required()
+                                Components\TextInput::make('brand')->label('Merk/Tipe Baru')->required(),
                             ])
                             ->createOptionUsing(fn (array $data) => $data['brand'])
                             ->columnSpan(['default' => 1, 'md' => 2]),
@@ -180,9 +221,9 @@ class AssetResource extends Resource
                     ->columns(['default' => 1, 'md' => 2])
                     ->visible(fn (callable $get) => filled($get('classification_id'))),
 
-                \Filament\Schemas\Components\Section::make('Pembelian')
+                Section::make('Pembelian')
                     ->schema([
-                        \Filament\Schemas\Components\Group::make()->schema([
+                        Group::make()->schema([
                             Components\TextInput::make('unit_price')
                                 ->label('Harga Satuan')
                                 ->numeric()
@@ -207,14 +248,14 @@ class AssetResource extends Resource
                                     $price = $get('unit_price') !== null ? (float) $get('unit_price') : null;
                                     $set('total_price', $price !== null ? $price * $qty : null);
                                 }),
-                                
+
                             Components\TextInput::make('total_price')
                                 ->label('Total Harga')
                                 ->numeric()
                                 ->prefix('Rp')
                                 ->disabled()
                                 ->dehydrated(),
-                                
+
                             Components\Select::make('unit')
                                 ->label('Satuan')
                                 ->options([
@@ -237,15 +278,15 @@ class AssetResource extends Resource
                                 ->label('Sumber Dana')
                                 ->options([
                                     'company' => 'Yayasan',
-                                    'grant'   => 'Hibah',
-                                    'loan'    => 'Pinjaman',
+                                    'grant' => 'Hibah',
+                                    'loan' => 'Pinjaman',
                                 ])
                                 ->native(false)
                                 ->required()
                                 ->default('company'),
                         ])->columns(['default' => 1, 'md' => 2])->columnSpan(['default' => 1, 'md' => 2]),
-                        
-                        \Filament\Schemas\Components\Group::make()->schema([
+
+                        Group::make()->schema([
                             Components\FileUpload::make('invoice_document')
                                 ->disk('s3')
                                 ->label('Dokumen Invoice / Nota')
@@ -259,7 +300,7 @@ class AssetResource extends Resource
                     ->statePath('purchase_data')
                     ->visible(fn (callable $get) => filled($get('classification_id'))),
 
-                \Filament\Schemas\Components\Section::make('Penempatan')
+                Section::make('Penempatan')
                     ->description(fn ($record) => $record?->status === 'baru_dilaporkan' ? 'Penempatan sementara. Jika lokasi tidak diubah, maka dianggap sudah sesuai (dikonfirmasi).' : '')
                     ->schema([
                         Components\Select::make('campus_id')
@@ -301,9 +342,9 @@ class AssetResource extends Resource
                     ->columns(['default' => 1, 'md' => 2])
                     ->visible(fn (callable $get) => filled($get('classification_id'))),
 
-                \Filament\Schemas\Components\Section::make('Detail Fisik & Spesifikasi')
+                Section::make('Detail Fisik & Spesifikasi')
                     ->schema([
-                        \Filament\Schemas\Components\Group::make()->schema([
+                        Group::make()->schema([
                             Components\TextInput::make('serial_number')
                                 ->label('Nomor Seri')
                                 ->maxLength(255)
@@ -324,42 +365,42 @@ class AssetResource extends Resource
                             Components\Select::make('status')
                                 ->label('Status')
                                 ->options([
-                                    'stock'               => 'Stok (Gudang)',
-                                    'active'              => 'Aktif / Digunakan',
-                                    'borrowed'            => 'Dipinjam',
-                                    'maintenance'         => 'Dalam Perbaikan',
-                                    'lost'                => 'Hilang',
-                                    'sold'                => 'Terjual',
-                                    'disposed'            => 'Dihapuskan / Musnah',
-                                    'baru_dilaporkan'     => 'Baru',
+                                    'stock' => 'Stok (Gudang)',
+                                    'active' => 'Aktif / Digunakan',
+                                    'borrowed' => 'Dipinjam',
+                                    'maintenance' => 'Dalam Perbaikan',
+                                    'lost' => 'Hilang',
+                                    'sold' => 'Terjual',
+                                    'disposed' => 'Dihapuskan / Musnah',
+                                    'baru_dilaporkan' => 'Baru',
                                     'menunggu_pengecekan' => 'Menunggu Pengecekan',
                                 ])
                                 ->required()
                                 ->default('stock')
                                 ->native(false)
-                                ->disabled(fn (?\App\Models\Asset $record) => $record?->status === 'baru_dilaporkan')
+                                ->disabled(fn (?Asset $record) => $record?->status === 'baru_dilaporkan')
                                 ->dehydrated(),
 
                             Components\Select::make('kondisi')
                                 ->label('Kondisi')
                                 ->options([
-                                    'good'         => 'Baik',
+                                    'good' => 'Baik',
                                     'minor_damage' => 'Rusak Ringan',
                                     'major_damage' => 'Rusak Berat',
-                                    'unchecked'    => 'Belum Dicek',
+                                    'unchecked' => 'Belum Dicek',
                                 ])
                                 ->required()
                                 ->default('good')
                                 ->native(false)
-                                ->disabled(fn (?\App\Models\Asset $record) => $record?->status === 'baru_dilaporkan')
+                                ->disabled(fn (?Asset $record) => $record?->status === 'baru_dilaporkan')
                                 ->dehydrated(),
-                                
+
                             Components\Textarea::make('notes')
                                 ->label('Keterangan')
                                 ->columnSpanFull(),
                         ])->columns(['default' => 1, 'md' => 2])->columnSpan(['default' => 1, 'md' => 2]),
 
-                        \Filament\Schemas\Components\Group::make()->schema([
+                        Group::make()->schema([
                             Components\FileUpload::make('asset_photos')
                                 ->disk('s3_thumb')
                                 ->label('Foto Barang')
@@ -374,8 +415,13 @@ class AssetResource extends Resource
                                 ->directory('asset-photos')
                                 ->panelLayout('grid')
                                 ->appendFiles()
+                                ->openable()
+                                ->downloadable()
                                 ->formatStateUsing(function ($record) {
-                                    if (! $record) return [];
+                                    if (! $record) {
+                                        return [];
+                                    }
+
                                     return $record->photos->sortBy('sort_order')->pluck('file_path')->toArray();
                                 })
                                 ->saveRelationshipsUsing(function ($component, $state, $record) {
@@ -387,7 +433,7 @@ class AssetResource extends Resource
                                     }
                                     $addedPaths = array_diff($newPaths, $existingPaths);
                                     foreach ($addedPaths as $path) {
-                                        $disk = \Illuminate\Support\Facades\Storage::disk('s3');
+                                        $disk = Storage::disk('s3');
                                         $record->photos()->create([
                                             'file_path' => $path,
                                             'file_size' => $disk->exists($path) ? $disk->size($path) : null,
@@ -399,19 +445,26 @@ class AssetResource extends Resource
                                     }
                                 })
                                 ->dehydrated(false)
+                                ->visibleOn(['create', 'edit'])
+                                ->columnSpanFull(),
+
+                            Components\Placeholder::make('asset_photos_viewer')
+                                ->label('Foto Barang')
+                                ->visibleOn('view')
+                                ->content(fn (?Asset $record) => view('filament.components.asset-photos-viewer', ['record' => $record]))
                                 ->columnSpanFull(),
                         ])->columnSpan(['default' => 1, 'md' => 1]),
                     ])
                     ->columns(['default' => 1, 'md' => 3])
                     ->visible(fn (callable $get) => filled($get('classification_id'))),
 
-                \Filament\Schemas\Components\Section::make('Informasi Akuntansi')
+                Section::make('Informasi Akuntansi')
                     ->schema([
                         Components\Placeholder::make('capitalization_status')
                             ->label('Status Kapitalisasi')
                             ->content(function (callable $get, $record) {
                                 $price = 0;
-                                if ($record instanceof \App\Models\Asset && $record->purchaseItem) {
+                                if ($record instanceof Asset && $record->purchaseItem) {
                                     $price = (float) $record->purchaseItem->unit_price;
                                 } else {
                                     // Handle string with commas/dots if typed by user
@@ -419,14 +472,15 @@ class AssetResource extends Resource
                                     $price = (float) preg_replace('/[^0-9.]/', '', $rawPrice);
                                 }
 
-                                $threshold = \App\Models\PurchaseItem::CAPITALIZATION_THRESHOLD;
-                                $formattedThreshold = 'Rp ' . number_format($threshold, 0, ',', '.');
-                                $formattedPrice = 'Rp ' . number_format($price, 0, ',', '.');
+                                $threshold = PurchaseItem::CAPITALIZATION_THRESHOLD;
+                                $formattedThreshold = 'Rp '.number_format($threshold, 0, ',', '.');
+                                $formattedPrice = 'Rp '.number_format($price, 0, ',', '.');
 
                                 if ($price >= $threshold) {
-                                    return new \Illuminate\Support\HtmlString('<span style="color: green; font-weight: bold;">Dikapitalisasi (Aset Tetap)</span><br><small>Harga satuan (' . $formattedPrice . ') memenuhi batas kapitalisasi ' . $formattedThreshold . '.</small>');
+                                    return new HtmlString('<span style="color: green; font-weight: bold;">Dikapitalisasi (Aset Tetap)</span><br><small>Harga satuan ('.$formattedPrice.') memenuhi batas kapitalisasi '.$formattedThreshold.'.</small>');
                                 }
-                                return new \Illuminate\Support\HtmlString('<span style="color: orange; font-weight: bold;">Tidak Dikapitalisasi</span><br><small>Harga satuan (' . $formattedPrice . ') di bawah batas kapitalisasi ' . $formattedThreshold . '.</small>');
+
+                                return new HtmlString('<span style="color: orange; font-weight: bold;">Tidak Dikapitalisasi</span><br><small>Harga satuan ('.$formattedPrice.') di bawah batas kapitalisasi '.$formattedThreshold.'.</small>');
                             })
                             ->columnSpanFull(),
 
@@ -440,40 +494,45 @@ class AssetResource extends Resource
                             ])
                             ->placeholder(function (callable $get) {
                                 if ($categoryId = $get('category_id')) {
-                                    $cat = \App\Models\Category::find($categoryId);
-                                    return $cat ? 'Bawaan Kategori (' . $cat->useful_life . ' Tahun)' : 'Pilih Masa Manfaat';
+                                    $cat = Category::find($categoryId);
+
+                                    return $cat ? 'Bawaan Kategori ('.$cat->useful_life.' Tahun)' : 'Pilih Masa Manfaat';
                                 }
+
                                 return 'Pilih Masa Manfaat';
                             })
                             ->helperText('Biarkan kosong untuk menggunakan masa manfaat bawaan dari Kategori.')
                             ->columnSpanFull()
                             ->native(false),
 
-                        \Filament\Schemas\Components\Grid::make(3)
+                        Grid::make(3)
                             ->schema([
                                 Components\Placeholder::make('acquisition_cost')
                                     ->label('Harga Perolehan (Cost)')
-                                    ->content(fn ($record) => $record instanceof \App\Models\Asset ? 'Rp ' . number_format(\App\Services\DepreciationService::calculate($record)['acquisition_cost'], 0, ',', '.') : '-'),
+                                    ->content(fn ($record) => $record instanceof Asset ? 'Rp '.number_format(DepreciationService::calculate($record)['acquisition_cost'], 0, ',', '.') : '-'),
 
                                 Components\Placeholder::make('book_value')
                                     ->label('Nilai Buku Saat Ini')
-                                    ->content(fn ($record) => $record instanceof \App\Models\Asset ? 'Rp ' . number_format(\App\Services\DepreciationService::calculate($record)['book_value'], 0, ',', '.') : '-'),
+                                    ->content(fn ($record) => $record instanceof Asset ? 'Rp '.number_format(DepreciationService::calculate($record)['book_value'], 0, ',', '.') : '-'),
 
                                 Components\Placeholder::make('annual_depreciation')
                                     ->label('Penyusutan Tahunan')
-                                    ->content(fn ($record) => $record instanceof \App\Models\Asset ? 'Rp ' . number_format(\App\Services\DepreciationService::calculate($record)['annual_depreciation'], 0, ',', '.') : '-'),
+                                    ->content(fn ($record) => $record instanceof Asset ? 'Rp '.number_format(DepreciationService::calculate($record)['annual_depreciation'], 0, ',', '.') : '-'),
                             ]),
                     ])
                     ->columns(1)
                     ->visible(fn (callable $get) => filled($get('classification_id')) && $isAset($get)),
 
-                \Filament\Schemas\Components\Group::make()->schema([
+                Group::make()->schema([
                     Components\TextInput::make('inventory_number')->label('Kode Barang')->disabled()->visibleOn(['edit', 'view']),
                     Components\TextInput::make('barcode')->label('Barcode Number')->disabled()->visibleOn(['edit', 'view']),
                 ])->visible(fn ($record, callable $get) => $record !== null && filled($get('classification_id'))),
             ])->columns(1);
-    }    public static function table(Table $table): Table
+    }
+
+    public static function table(Table $table): Table
     {
+
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
@@ -521,17 +580,17 @@ class AssetResource extends Resource
                     ->badge()
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'stock'                    => 'Stok (Gudang)',
-                        'active'                   => 'Aktif / Digunakan',
-                        'borrowed'                 => 'Dipinjam',
-                        'maintenance'              => 'Dalam Perbaikan',
-                        'lost'                     => 'Hilang',
-                        'sold'                     => 'Terjual',
-                        'disposed'                 => 'Dihapuskan / Musnah',
+                        'stock' => 'Stok (Gudang)',
+                        'active' => 'Aktif / Digunakan',
+                        'borrowed' => 'Dipinjam',
+                        'maintenance' => 'Dalam Perbaikan',
+                        'lost' => 'Hilang',
+                        'sold' => 'Terjual',
+                        'disposed' => 'Dihapuskan / Musnah',
                         'administratively_deleted' => 'Pghps. Administratif',
-                        'destroyed'                => 'Dimusnahkan',
-                        'baru_dilaporkan'          => 'Baru Dilaporkan',
-                        default                    => $state,
+                        'destroyed' => 'Dimusnahkan',
+                        'baru_dilaporkan' => 'Baru Dilaporkan',
+                        default => $state,
                     }),
                 Tables\Columns\TextColumn::make('kondisi')
                     ->label('Kondisi')
@@ -539,16 +598,16 @@ class AssetResource extends Resource
                     ->badge()
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'good'                     => 'Baik',
-                        'minor_damage'             => 'Rusak Ringan',
-                        'major_damage'             => 'Rusak Berat',
-                        default                    => $state,
+                        'good' => 'Baik',
+                        'minor_damage' => 'Rusak Ringan',
+                        'major_damage' => 'Rusak Berat',
+                        default => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {
-                        'good'         => 'success',
+                        'good' => 'success',
                         'minor_damage' => 'warning',
                         'major_damage' => 'danger',
-                        default        => 'gray',
+                        default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('campus.name')
                     ->label('Gedung')
@@ -567,13 +626,14 @@ class AssetResource extends Resource
                 Tables\Columns\TextColumn::make('purchaseItem.unit_price')
                     ->label('Harga Perolehan')
                     ->toggleable()
-                    ->formatStateUsing(fn ($state) => $state ? 'Rp ' . number_format((float) $state, 0, ',', '.') : null)
+                    ->formatStateUsing(fn ($state) => $state ? 'Rp '.number_format((float) $state, 0, ',', '.') : null)
                     ->sortable()
                     ->getStateUsing(function ($record): ?string {
                         // New architecture: use unit_price from PurchaseItem
                         if ($record->purchaseItem) {
                             return $record->purchaseItem->unit_price;
                         }
+
                         // Legacy fallback: use total_price from AssetPurchase
                         return $record->purchase?->total_price;
                     }),
@@ -589,30 +649,31 @@ class AssetResource extends Resource
                     // Dropdown Gedung/Ruangan dirender di toolbar tabel (lihat
                     // AppServiceProvider); field hidden ini cuma nampung state-nya.
                     ->form([
-                        \Filament\Forms\Components\Hidden::make('campus_id'),
-                        \Filament\Forms\Components\Hidden::make('location_id'),
+                        Hidden::make('campus_id'),
+                        Hidden::make('location_id'),
                     ])
-                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                    ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['campus_id'] ?? null,
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $campusId): \Illuminate\Database\Eloquent\Builder => $query->where('campus_id', $campusId),
+                                fn (Builder $query, $campusId): Builder => $query->where('campus_id', $campusId),
                             )
                             ->when(
                                 $data['location_id'] ?? null,
-                                fn (\Illuminate\Database\Eloquent\Builder $query, $locationId): \Illuminate\Database\Eloquent\Builder => $query->where('location_id', $locationId),
+                                fn (Builder $query, $locationId): Builder => $query->where('location_id', $locationId),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['campus_id'] ?? null) {
-                            $indicators[] = Tables\Filters\Indicator::make('Gedung: ' . \App\Models\Campus::find($data['campus_id'])?->name)
+                            $indicators[] = Tables\Filters\Indicator::make('Gedung: '.Campus::find($data['campus_id'])?->name)
                                 ->removeField('campus_id');
                         }
                         if ($data['location_id'] ?? null) {
-                            $indicators[] = Tables\Filters\Indicator::make('Ruangan: ' . \App\Models\Location::find($data['location_id'])?->name)
+                            $indicators[] = Tables\Filters\Indicator::make('Ruangan: '.Location::find($data['location_id'])?->name)
                                 ->removeField('location_id');
                         }
+
                         return $indicators;
                     }),
                 Tables\Filters\SelectFilter::make('pic_id')
@@ -621,103 +682,103 @@ class AssetResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'stock'                    => 'Stok (Gudang)',
-                        'active'                   => 'Aktif / Digunakan',
-                        'borrowed'                 => 'Dipinjam',
-                        'maintenance'              => 'Dalam Perbaikan',
-                        'lost'                     => 'Hilang',
-                        'sold'                     => 'Terjual',
-                        'disposed'                 => 'Dihapuskan / Musnah',
+                        'stock' => 'Stok (Gudang)',
+                        'active' => 'Aktif / Digunakan',
+                        'borrowed' => 'Dipinjam',
+                        'maintenance' => 'Dalam Perbaikan',
+                        'lost' => 'Hilang',
+                        'sold' => 'Terjual',
+                        'disposed' => 'Dihapuskan / Musnah',
                         'administratively_deleted' => 'Penghapusan Administratif',
-                        'destroyed'                => 'Dimusnahkan',
-                        'baru_dilaporkan'          => 'Baru Dilaporkan',
+                        'destroyed' => 'Dimusnahkan',
+                        'baru_dilaporkan' => 'Baru Dilaporkan',
                     ]),
                 Tables\Filters\SelectFilter::make('kondisi')
                     ->label('Kondisi')
                     ->options([
-                        'good'                     => 'Baik',
-                        'minor_damage'             => 'Rusak Ringan',
-                        'major_damage'             => 'Rusak Berat',
+                        'good' => 'Baik',
+                        'minor_damage' => 'Rusak Ringan',
+                        'major_damage' => 'Rusak Berat',
                     ]),
                 Tables\Filters\SelectFilter::make('ownership')
                     ->label('Sumber Dana')
                     ->options([
                         'company' => 'Yayasan',
-                        'grant'   => 'Hibah',
-                        'loan'    => 'Pinjaman',
+                        'grant' => 'Hibah',
+                        'loan' => 'Pinjaman',
                     ]),
                 Tables\Filters\TrashedFilter::make()
                     ->visible(fn () => Auth::user()->hasRole('superadmin')),
             ])
             ->actions([
-                \Filament\Actions\ActionGroup::make([
-                    \App\Filament\Support\PrintBarcodeActions::viewAction(),
-                    \App\Filament\Support\PrintBarcodeActions::rowAction(),
-                    \Filament\Actions\Action::make('changeStatus')
+                ActionGroup::make([
+                    PrintBarcodeActions::viewAction(),
+                    PrintBarcodeActions::rowAction(),
+                    Action::make('changeStatus')
                         ->label('Ubah Status/Kondisi')
                         ->icon('heroicon-o-arrow-path')
                         ->color('warning')
-                        ->visible(fn ($record) => Auth::user()->hasPermissionTo('status.update') && ($record instanceof \App\Models\Asset ? !$record->trashed() : true))
+                        ->visible(fn ($record) => Auth::user()->hasPermissionTo('status.update') && ($record instanceof Asset ? ! $record->trashed() : true))
                         ->form([
                             Components\Select::make('new_status')
                                 ->label('Status Baru')
                                 ->options([
-                                    'stock'                    => 'Stok (Gudang)',
-                                    'active'                   => 'Aktif / Digunakan',
-                                    'borrowed'                 => 'Dipinjam',
-                                    'maintenance'              => 'Dalam Perbaikan',
-                                    'lost'                     => 'Hilang (Butuh Approval)',
-                                    'sold'                     => 'Terjual',
-                                    'disposed'                 => 'Dihapuskan / Musnah',
+                                    'stock' => 'Stok (Gudang)',
+                                    'active' => 'Aktif / Digunakan',
+                                    'borrowed' => 'Dipinjam',
+                                    'maintenance' => 'Dalam Perbaikan',
+                                    'lost' => 'Hilang (Butuh Approval)',
+                                    'sold' => 'Terjual',
+                                    'disposed' => 'Dihapuskan / Musnah',
                                     'administratively_deleted' => 'Penghapusan Administratif (Butuh Approval)',
-                                    'destroyed'                => 'Dimusnahkan (Butuh Approval)',
+                                    'destroyed' => 'Dimusnahkan (Butuh Approval)',
                                 ])
                                 ->required()
                                 ->default(fn ($record) => $record->status),
                             Components\Select::make('new_kondisi')
                                 ->label('Kondisi Baru')
                                 ->options([
-                                    'good'                     => 'Baik',
-                                    'minor_damage'             => 'Rusak Ringan',
-                                    'major_damage'             => 'Rusak Berat',
+                                    'good' => 'Baik',
+                                    'minor_damage' => 'Rusak Ringan',
+                                    'major_damage' => 'Rusak Berat',
                                 ])
                                 ->required()
                                 ->default(fn ($record) => $record->kondisi),
                             Components\Textarea::make('reason')
                                 ->label('Alasan Perubahan')
-                                ->required()
+                                ->required(),
                         ])
                         ->action(function (Asset $record, array $data) {
                             $newStatus = $data['new_status'];
                             $newKondisi = $data['new_kondisi'];
                             $reason = $data['reason'];
-    
+
                             try {
-                                \Illuminate\Support\Facades\DB::transaction(function () use ($record, $newStatus, $newKondisi, $reason) {
+                                DB::transaction(function () use ($record, $newStatus, $newKondisi, $reason) {
                                     $lockedAsset = Asset::where('id', $record->id)->lockForUpdate()->first();
-    
+
                                     if (in_array($newStatus, ['lost', 'destroyed'])) {
-                                        $hasPending = \App\Models\ApprovalRequest::where('status', 'pending')
+                                        $hasPending = ApprovalRequest::where('status', 'pending')
                                             ->where('request_type', 'status_change')
                                             ->whereJsonContains('payload->asset_id', $record->id)
                                             ->exists();
-    
+
                                         if ($hasPending) {
-                                            throw new \Exception("Barang ini masih memiliki pengajuan yang menunggu persetujuan.");
+                                            throw new \Exception('Barang ini masih memiliki pengajuan yang menunggu persetujuan.');
                                         }
-    
-                                        \App\Models\ApprovalRequest::create([
+
+                                        ApprovalRequest::create([
                                             'request_type' => 'status_change',
                                             'requested_by' => Auth::id(),
-                                            'status'       => 'pending',
-                                            'reason'       => $reason,
-                                            'payload'      => json_encode([
-                                                'asset_id'    => $record->id,
-                                                'new_status'  => $newStatus,
-                                                'old_status'  => $lockedAsset->status,
+                                            'status' => 'pending',
+                                            'reason' => $reason,
+                                            'payload' => json_encode([
+                                                'asset_id' => $record->id,
+                                                'new_status' => $newStatus,
+                                                'old_status' => $lockedAsset->status,
                                                 'new_kondisi' => $newKondisi,
                                                 'old_kondisi' => $lockedAsset->kondisi,
-                                            ])
+                                            ]),
                                         ]);
                                     } else {
                                         request()->merge(['status_change_reason' => $reason]);
@@ -727,58 +788,58 @@ class AssetResource extends Resource
                                         ]);
                                     }
                                 });
-    
+
                                 if (in_array($newStatus, ['lost', 'destroyed'])) {
-                                    \Filament\Notifications\Notification::make()
+                                    Notification::make()
                                         ->title('Menunggu Persetujuan')
                                         ->body('Perubahan ke kondisi kritis membutuhkan persetujuan.')
                                         ->warning()
                                         ->send();
                                 } else {
-                                    \Filament\Notifications\Notification::make()
+                                    Notification::make()
                                         ->title('Kondisi Berhasil Diubah')
                                         ->success()
                                         ->send();
                                 }
                             } catch (\Exception $e) {
-                                \Filament\Notifications\Notification::make()
+                                Notification::make()
                                     ->title('Gagal Memproses')
                                     ->body($e->getMessage())
                                     ->danger()
                                     ->send();
                             }
                         }),
-                    \Filament\Actions\ViewAction::make(),
-                    \Filament\Actions\EditAction::make(),
-                    \Filament\Actions\DeleteAction::make()
+                    ViewAction::make(),
+                    EditAction::make(),
+                    DeleteAction::make()
                         ->modalHeading('Hapus Aset (Soft Delete)')
                         ->modalDescription('Aset akan dihapus dari daftar aktif, tetapi histori tetap tersimpan.')
                         ->visible(fn () => Auth::user()->hasRole('superadmin')),
-                    \Filament\Actions\ForceDeleteAction::make()
+                    ForceDeleteAction::make()
                         ->visible(fn () => Auth::user()->hasRole('superadmin')),
-                    \Filament\Actions\RestoreAction::make()
+                    RestoreAction::make()
                         ->visible(fn () => Auth::user()->hasRole('superadmin')),
-                ])
+                ]),
             ])
             // Centang tetap ada saat search/filter berubah. Tautan "Pilih semua N
             // data" dimatikan, karena tanpa filter-ulang ia bisa memilih seluruh tabel.
             ->deselectAllRecordsWhenFiltered(false)
             ->selectCurrentPageOnly()
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\ForceDeleteBulkAction::make()
+                BulkActionGroup::make([
+                    ForceDeleteBulkAction::make()
                         ->visible(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')),
-                    \Filament\Actions\RestoreBulkAction::make()
+                    RestoreBulkAction::make()
                         ->visible(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')),
                 ]),
-                \App\Filament\Support\PrintBarcodeActions::bulkAction(),
-                \App\Filament\Support\PrintChecklistActions::bulkAction(),
-                \App\Filament\Support\AddPhotoActions::bulkAction(),
-                \App\Filament\Support\MoveLocationActions::bulkAction(),
-                \App\Filament\Support\ChangeCategoryActions::bulkAction(),
-                \App\Filament\Support\ChangeStatusActions::bulkAction(),
-                \App\Filament\Support\ChangeKondisiActions::bulkAction(),
-                \App\Filament\Support\DeleteItemsActions::bulkAction(),
+                PrintBarcodeActions::bulkAction(),
+                PrintChecklistActions::bulkAction(),
+                AddPhotoActions::bulkAction(),
+                MoveLocationActions::bulkAction(),
+                ChangeCategoryActions::bulkAction(),
+                ChangeStatusActions::bulkAction(),
+                ChangeKondisiActions::bulkAction(),
+                DeleteItemsActions::bulkAction(),
             ])
             ->emptyStateHeading('Belum ada Barang/Aset')
             ->emptyStateDescription('Mulai kelola inventaris Anda dengan menambahkan barang baru.');
@@ -787,10 +848,10 @@ class AssetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListAssets::route('/'),
+            'index' => Pages\ListAssets::route('/'),
             'create' => Pages\CreateAsset::route('/create'),
-            'view'   => Pages\ViewAsset::route('/{record}'),
-            'edit'   => Pages\EditAsset::route('/{record}/edit'),
+            'view' => Pages\ViewAsset::route('/{record}'),
+            'edit' => Pages\EditAsset::route('/{record}/edit'),
         ];
     }
 }
