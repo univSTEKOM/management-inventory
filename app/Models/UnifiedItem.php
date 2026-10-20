@@ -38,6 +38,8 @@ class UnifiedItem extends Model
                 ->select(
                     DB::raw("CONCAT('asset_', assets.id) as id"),
                     'assets.id as raw_id',
+                    'assets.campus_id',
+                    'assets.location_id',
                     'assets.ulid as route_key',
                     DB::raw("'asset' as row_type"),
                     'assets.barcode as barcode',
@@ -69,6 +71,8 @@ class UnifiedItem extends Model
                 ->select(
                     DB::raw("CONCAT('supply_', inventory_balances.id) as id"),
                     'inventory_balances.id as raw_id',
+                    'inventory_balances.campus_id',
+                    'inventory_balances.location_id',
                     'inventory_balances.id as route_key',
                     DB::raw("'supply' as row_type"),
                     'inventory_balances.master_barcode as barcode',
