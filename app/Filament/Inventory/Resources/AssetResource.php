@@ -162,7 +162,10 @@ class AssetResource extends Resource
                             ->inline()
                             ->required()
                             ->live()
-                            ->afterStateUpdated(fn (callable $set) => $set('category_id', null))
+                            ->afterStateUpdated(function (callable $set) {
+                                $set('category_id', null);
+                                $set('brand', null);
+                            })
                             ->disabled(fn ($record) => $record !== null && $record->classification_id !== null),
                     ]),
 
@@ -170,6 +173,8 @@ class AssetResource extends Resource
                     ->schema([
                         Components\Select::make('category_id')
                             ->label('Kategori')
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('brand', null))
                             ->relationship(
                                 name: 'category',
                                 titleAttribute: 'name',
@@ -204,7 +209,9 @@ class AssetResource extends Resource
                             ->label('Merk/Tipe')
                             ->searchable()
                             ->options(function (callable $get) {
-                                $options = Asset::whereNotNull('brand')->distinct()->pluck('brand', 'brand')->toArray();
+                                $options = \App\Filament\Support\ItemBrandOptions::forCategory(
+                                    $get('category_id'), $get('classification_id'),
+                                );
                                 $current = $get('brand');
                                 if ($current && ! isset($options[$current])) {
                                     $options[$current] = $current;

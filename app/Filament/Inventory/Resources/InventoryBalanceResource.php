@@ -123,12 +123,15 @@ class InventoryBalanceResource extends Resource
             ->actions([
                 ActionGroup::make([
                     Action::make('edit_info')
+                        ->authorize(fn () => Auth::user()?->hasPermissionTo('assets.update') ?? false)
                         ->label('Edit')
                         ->icon('heroicon-o-pencil-square')
                         ->color('gray')
                         ->modalHeading(fn (InventoryBalance $record) => 'Edit: '.$record->name)
+                        ->modalDescription('Jika kategori, nama, merk, dan lokasi sama dengan barang lain, stok beserta riwayat pembelian akan digabung.')
                         ->fillForm(fn (InventoryBalance $record): array => [
                             'name' => $record->name,
+                            'category_id' => $record->category_id,
                             'brand' => $record->brand,
                             'location_id' => $record->location_id,
                             'campus_id' => $record->campus_id,
@@ -140,9 +143,32 @@ class InventoryBalanceResource extends Resource
                                 ->label('Nama Barang')
                                 ->required()
                                 ->maxLength(255),
-                            Forms\Components\TextInput::make('brand')
+                            Forms\Components\Select::make('category_id')
+                                ->label('Kategori')
+                                ->disabled(fn () => ! (Auth::user()?->hasRole('Superadmin') ?? false))
+                                ->options(fn () => \App\Models\Category::whereHas('classifications', fn ($query) => $query->where('slug', 'barang-habis-pakai'))->pluck('name', 'id'))
+                                ->required()
+                                ->searchable()
+                                ->live()
+                                ->afterStateUpdated(fn ($set) => $set('brand', null)),
+                            Forms\Components\Select::make('brand')
                                 ->label('Merk / Tipe')
-                                ->maxLength(255),
+                                ->searchable()
+                                ->options(function ($get) {
+                                    $options = \App\Filament\Support\ItemBrandOptions::forCategory(
+                                        $get('category_id'),
+                                        \App\Models\Classification::where('slug', 'barang-habis-pakai')->value('id'),
+                                    );
+                                    if (filled($get('brand'))) {
+                                        $options[$get('brand')] = $get('brand');
+                                    }
+
+                                    return $options;
+                                })
+                                ->createOptionForm([
+                                    Forms\Components\TextInput::make('brand')->label('Merk/Tipe Baru')->required()->maxLength(255),
+                                ])
+                                ->createOptionUsing(fn (array $data) => $data['brand']),
                             Forms\Components\Select::make('campus_id')
                                 ->label('Gedung / Kampus')
                                 ->relationship('campus', 'name')
@@ -185,16 +211,18 @@ class InventoryBalanceResource extends Resource
                                 SharedPhotoFiles::deleteIfUnreferenced($record->photo, ['s3'], exceptBalanceId: $record->id);
                             }
 
-                            $record->update(array_merge(
+                            \App\Filament\Support\InventoryBalanceMerger::apply($record, array_merge(
                                 Arr::except($data, ['photo']),
                                 ['photo' => $newPhoto],
-                            ));
+                            ), 'updated');
 
                             Notification::make()
                                 ->title('Berhasil diperbarui')
                                 ->success()
                                 ->send();
                         }),
+
+                    \App\Filament\Support\AddSupplyStockAction::make(),
 
                     Action::make('stock_out')
                         ->label('Gunakan Stok')
