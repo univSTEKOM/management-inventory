@@ -92,14 +92,16 @@ class Asset extends Model {
     public function priceHistories(): HasMany { return $this->hasMany(AssetPriceHistory::class); }
 
     /**
-     * Format "{campus.name} - {location.name}" dipakai di label barcode
-     * (baik preview SVG di web maupun TSPL2 print-agent), biar konsisten.
+     * Format "{campus.code} - {location.name}" untuk preview, antrean barcode,
+     * dan checklist. Gunakan nama gedung jika kode belum diisi.
      */
     public function printLocationLabel(): string
     {
+        $campusCode = trim((string) $this->campus?->code);
+
         return implode(' - ', array_filter([
-            $this->campus?->name,
+            $campusCode !== '' ? $campusCode : $this->campus?->name,
             $this->location?->name,
-        ]));
+        ], fn ($part) => $part !== null && $part !== ''));
     }
 }
