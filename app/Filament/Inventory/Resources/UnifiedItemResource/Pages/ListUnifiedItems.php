@@ -95,7 +95,7 @@ class ListUnifiedItems extends ListRecords
 
                     // Filament FileUpload mengembalikan string path (karena storeFiles(false) dihapus)
                     if (is_string($uploadedFile)) {
-                        $tempPath  = \Illuminate\Support\Facades\Storage::path($uploadedFile);
+                        $tempPath  = \Illuminate\Support\Facades\Storage::disk('local')->path($uploadedFile);
                         $extension = strtolower(pathinfo($uploadedFile, PATHINFO_EXTENSION));
                     } else {
                         $tempPath  = $uploadedFile->getRealPath();
