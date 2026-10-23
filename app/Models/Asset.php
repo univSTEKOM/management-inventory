@@ -104,4 +104,21 @@ class Asset extends Model {
             $this->location?->name,
         ], fn ($part) => $part !== null && $part !== ''));
     }
+
+    /**
+     * Keterangan untuk cetak checklist tanpa catatan otomatis dalam kurung
+     * seperti (tahun perolehan tidak diketahui, harga perolehan tidak diketahui).
+     */
+    public function printNotes(): ?string
+    {
+        if (! $this->notes) {
+            return null;
+        }
+
+        $cleaned = preg_replace('/\s*\([^)]*(?:tidak diketahui|otomatis|perolehan)[^)]*\)/i', '', $this->notes);
+        $cleaned = trim((string) $cleaned);
+        $cleaned = trim($cleaned, " \t\n\r\0\x0B,-");
+
+        return $cleaned !== '' ? $cleaned : null;
+    }
 }
