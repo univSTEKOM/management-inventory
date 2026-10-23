@@ -123,7 +123,7 @@ class InventoryBalanceResource extends Resource
             ->actions([
                 ActionGroup::make([
                     Action::make('edit_info')
-                        ->authorize(fn () => Auth::user()?->hasPermissionTo('assets.update') ?? false)
+                        ->authorize(fn () => Auth::user()?->hasPermissionTo('supplies.update') ?? false)
                         ->label('Edit')
                         ->icon('heroicon-o-pencil-square')
                         ->color('gray')
@@ -145,7 +145,6 @@ class InventoryBalanceResource extends Resource
                                 ->maxLength(255),
                             Forms\Components\Select::make('category_id')
                                 ->label('Kategori')
-                                ->disabled(fn () => ! (Auth::user()?->hasRole('Superadmin') ?? false))
                                 ->options(fn () => \App\Models\Category::whereHas('classifications', fn ($query) => $query->where('slug', 'barang-habis-pakai'))->pluck('name', 'id'))
                                 ->required()
                                 ->searchable()
