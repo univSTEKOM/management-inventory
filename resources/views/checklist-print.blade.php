@@ -50,7 +50,7 @@
                 <td>{{ $asset->brand }}</td>
                 <td>{{ $asset->pic?->name }}</td>
                 <td class="col-check"><span class="check-box"></span></td>
-                <td class="col-note">{{ $asset->notes }}</td>
+                <td class="col-note">{{ $asset->printNotes() }}</td>
             </tr>
             @endforeach
         </tbody>

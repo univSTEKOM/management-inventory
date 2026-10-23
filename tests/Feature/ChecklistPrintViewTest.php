@@ -23,6 +23,35 @@ class ChecklistPrintViewTest extends TestCase
             ->assertSee('<td class="col-note"></td>', false);
     }
 
+    public function test_checklist_omits_automatic_notes_in_parentheses(): void
+    {
+        $assetWithUnknown = $this->assetWithNotes('Baterai Rusak (tahun perolehan tidak diketahui, harga perolehan tidak diketahui)');
+        $this->view('checklist-print', ['assets' => collect([$assetWithUnknown])])
+            ->assertSee('<td class="col-note">Baterai Rusak</td>', false)
+            ->assertDontSee('tahun perolehan tidak diketahui')
+            ->assertDontSee('harga perolehan tidak diketahui');
+
+        $assetOnlyAutomatic = $this->assetWithNotes('(tahun perolehan tidak diketahui, harga perolehan tidak diketahui)');
+        $this->view('checklist-print', ['assets' => collect([$assetOnlyAutomatic])])
+            ->assertSee('<td class="col-note"></td>', false);
+
+        $assetDashAndAutomatic = $this->assetWithNotes('- (tahun perolehan tidak diketahui)');
+        $this->view('checklist-print', ['assets' => collect([$assetDashAndAutomatic])])
+            ->assertSee('<td class="col-note"></td>', false);
+
+        $assetDashOnly = $this->assetWithNotes('-');
+        $this->view('checklist-print', ['assets' => collect([$assetDashOnly])])
+            ->assertSee('<td class="col-note"></td>', false);
+    }
+
+    public function test_checklist_preserves_manual_parentheses_in_notes(): void
+    {
+        $asset = $this->assetWithNotes('Sering Bluescreen (Saat Mengedit) (tahun perolehan tidak diketahui)');
+        $this->view('checklist-print', ['assets' => collect([$asset])])
+            ->assertSee('<td class="col-note">Sering Bluescreen (Saat Mengedit)</td>', false)
+            ->assertDontSee('tahun perolehan tidak diketahui');
+    }
+
     private function assetWithNotes(?string $notes): Asset
     {
         $asset = new Asset([
