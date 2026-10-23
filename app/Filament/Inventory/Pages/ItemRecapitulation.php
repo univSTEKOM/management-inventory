@@ -23,6 +23,35 @@ class ItemRecapitulation extends Page
     #[Url]
     public ?int $room = null;
 
+    #[Url]
+    public string $search = '';
+
+    #[Url]
+    public string $type = 'all';
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingType(): void
+    {
+        $this->resetPage();
+    }
+
+    public function setType(string $type): void
+    {
+        $this->type = $type;
+        $this->resetPage();
+    }
+
+    public function resetFilters(): void
+    {
+        $this->search = '';
+        $this->type = 'all';
+        $this->resetPage();
+    }
+
     public static function getNavigationIcon(): string
     {
         return 'heroicon-o-table-cells';
@@ -64,6 +93,22 @@ class ItemRecapitulation extends Page
             ->get()
             ->keyBy($groupColumn);
 
+        $itemsQuery = clone $query;
+        if (filled($this->search)) {
+            $searchTerm = '%' . trim($this->search) . '%';
+            $itemsQuery->where(function ($q) use ($searchTerm) {
+                $q->where('item_name', 'like', $searchTerm)
+                    ->orWhere('barcode', 'like', $searchTerm)
+                    ->orWhere('brand', 'like', $searchTerm)
+                    ->orWhere('classification_name', 'like', $searchTerm)
+                    ->orWhere('category_name', 'like', $searchTerm);
+            });
+        }
+
+        if (filled($this->type) && $this->type !== 'all') {
+            $itemsQuery->where('row_type', $this->type);
+        }
+
         return [
             'selectedCampus' => $campus,
             'selectedRoom' => $room,
@@ -74,8 +119,11 @@ class ItemRecapitulation extends Page
             'individualCount' => (clone $query)->where('row_type', 'asset')->sum('quantity'),
             'stockQuantity' => (clone $query)->where('row_type', 'supply')->sum('quantity'),
             'items' => $campus
-                ? (clone $query)->orderBy('item_name')->orderBy('id')->paginate(25)
+                ? (clone $itemsQuery)->orderBy('item_name')->orderBy('id')->paginate(25)
                 : null,
+            'search' => $this->search,
+            'type' => $this->type,
         ];
     }
 }
+

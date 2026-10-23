@@ -111,4 +111,32 @@ class ItemRecapitulationTest extends TestCase
         $this->expectException(HttpException::class);
         $this->page()->data();
     }
+
+    public function test_recap_items_can_be_filtered_by_search_and_type(): void
+    {
+        $this->authorizeReports();
+        $asset = Asset::factory()->create(['name' => 'Laptop Dell XPS']);
+        $campus = $asset->campus_id;
+        $room = $asset->location_id;
+        $balance = InventoryBalance::create([
+            'category_id' => $asset->category_id,
+            'campus_id' => $campus,
+            'location_id' => $room,
+            'name' => 'Kertas A4 Sinar Dunia',
+            'quantity' => 10,
+        ]);
+
+        $pageSearch = $this->page($campus, $room);
+        $pageSearch->search = 'Dell';
+        $searchData = $pageSearch->data();
+        $this->assertEquals(1, $searchData['items']->total());
+        $this->assertEquals('asset_'.$asset->id, $searchData['items']->first()->id);
+
+        $pageType = $this->page($campus, $room);
+        $pageType->type = 'supply';
+        $typeData = $pageType->data();
+        $this->assertEquals(1, $typeData['items']->total());
+        $this->assertEquals('supply_'.$balance->id, $typeData['items']->first()->id);
+    }
 }
+
