@@ -23,7 +23,7 @@ class AddSupplyStockAction
         return Action::make('stock_in')
             ->label('Tambah Stok')
             ->icon('heroicon-o-plus-circle')
-            ->authorize(fn () => Auth::user()?->hasPermissionTo('assets.create') ?? false)
+            ->authorize(fn () => Auth::user()?->hasPermissionTo('supplies.stock_in') ?? false)
             ->modalHeading(fn (InventoryBalance $record) => 'Tambah Stok: '.$record->name)
             ->form([
                 TextInput::make('quantity')->label('Jumlah Tambahan')->integer()->minValue(1)->required(),

@@ -121,4 +121,18 @@ class Asset extends Model {
 
         return $cleaned !== '' ? $cleaned : null;
     }
+
+    /**
+     * Sorting konsisten untuk Cetak Checklist dan Cetak Barcode.
+     * Kolom didukung: 'notes' (Keterangan, default), 'name' (Nama Barang), 'inventory_number' (Kode Inventaris).
+     * Selalu case-insensitive dengan id sebagai tiebreaker stabil.
+     */
+    public function scopeOrderedForPrint($query, ?string $sortBy = 'notes')
+    {
+        return match ($sortBy) {
+            'name' => $query->orderByRaw("LOWER(COALESCE(name, '')) ASC")->orderBy('id'),
+            'inventory_number' => $query->orderByRaw("LOWER(COALESCE(inventory_number, '')) ASC")->orderBy('id'),
+            default => $query->orderByRaw("LOWER(COALESCE(notes, '')) ASC")->orderBy('id'),
+        };
+    }
 }

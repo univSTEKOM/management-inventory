@@ -165,6 +165,9 @@ class PrintBarcodeActions
                                     return;
                                 }
 
+                                $savedSort = session('last_print_sort_' . $state, session('last_print_sort', 'notes'));
+                                $set('sort_by', $savedSort);
+
                                 $hasBarcodeCount = Asset::where('location_id', $state)->whereNotNull('barcode')->count();
                                 $noBarcodeAssets = Asset::where('location_id', $state)
                                     ->whereNull('barcode')
@@ -183,6 +186,17 @@ class PrintBarcodeActions
                                 $set('error_list', $list);
                             }),
 
+                        Select::make('sort_by')
+                            ->label('Urutan Cetak')
+                            ->options([
+                                'notes' => 'Keterangan (A–Z)',
+                                'name' => 'Nama Barang (A–Z)',
+                                'inventory_number' => 'Kode Inventaris (A–Z)',
+                            ])
+                            ->default('notes')
+                            ->required()
+                            ->helperText('Otomatis sinkron dengan urutan Cetak Checklist untuk ruangan ini.'),
+
                         Placeholder::make('errors')
                             ->label('Bermasalah')
                             ->visible(fn (callable $get) => ($get('error_count') ?? 0) > 0)
@@ -193,12 +207,16 @@ class PrintBarcodeActions
                                 return new HtmlString("<div class='rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800'><p><strong>{$count} barang belum memiliki barcode dan tidak dapat dicetak:</strong></p><ul class='list-disc pl-5 mt-2'>{$list}</ul></div>");
                             }),
 
-                        static::stationSelect('Semua label diantre bareng, otomatis ke-pair 2 per baris sesuai urutan Nama > Kode.'),
+                        static::stationSelect('Semua label diantre bareng, otomatis ke-pair 2 per baris sesuai urutan yang dipilih.'),
                     ])
                     ->afterValidation(function (callable $get, callable $set) {
+                        $sortBy = $get('sort_by') ?: 'notes';
+                        session(['last_print_sort_' . $get('location_id') => $sortBy]);
+                        session(['last_print_sort' => $sortBy]);
+
                         $ids = Asset::where('location_id', $get('location_id'))
                             ->whereNotNull('barcode')
-                            ->orderBy('name')->orderBy('inventory_number')
+                            ->orderedForPrint($sortBy)
                             ->pluck('id')->map(fn ($id) => (string) $id)->all();
 
                         if ($ids === []) {
@@ -218,9 +236,8 @@ class PrintBarcodeActions
                             ->viewData(fn (callable $get) => [
                                 'assets' => Asset::where('location_id', $get('location_id'))
                                     ->whereNotNull('barcode')
-                                    ->orderBy('name')
-                                    ->orderBy('inventory_number')
-                                    ->get(['id', 'inventory_number', 'name', 'brand']),
+                                    ->orderedForPrint($get('sort_by') ?: 'notes')
+                                    ->get(['id', 'inventory_number', 'name', 'brand', 'notes']),
                             ]),
 
                     ]),
@@ -232,6 +249,7 @@ class PrintBarcodeActions
                     $data['printer_station'],
                     Auth::id(),
                     array_map('intval', $data['asset_ids'] ?? []),
+                    $data['sort_by'] ?? 'notes',
                 );
 
                 if ($queued === 0) {
@@ -251,11 +269,11 @@ class PrintBarcodeActions
      * 'asset'/'supply' -- 'supply' gak punya barcode per unit, dilewati).
      *
      * Urutan yang dikembalikan sama dengan Cetak Checklist:
-     * nama barang (A→Z) lalu kode inventaris (A→Z) -- sesuai web.php baris 51.
+     * default keterangan/notes (A→Z, case-insensitive) lalu id (tiebreaker stabil).
      *
      * @return Collection<int, Asset>
      */
-    protected static function resolveAssets(Collection $records): Collection
+    protected static function resolveAssets(Collection $records, string $sortBy = 'notes'): Collection
     {
         if ($records->isEmpty()) {
             return $records;
@@ -266,8 +284,7 @@ class PrintBarcodeActions
             // dengan DB. Re-query dengan sorting yang sama seperti Cetak Checklist.
             return Asset::whereIn('id', $records->pluck('id'))
                 ->whereNotNull('barcode')
-                ->orderBy('name')
-                ->orderBy('inventory_number')
+                ->orderedForPrint($sortBy)
                 ->get();
         }
 
@@ -276,8 +293,7 @@ class PrintBarcodeActions
 
         return Asset::whereIn('id', $assetIds)
             ->whereNotNull('barcode')
-            ->orderBy('name')
-            ->orderBy('inventory_number')
+            ->orderedForPrint($sortBy)
             ->get();
     }
 }

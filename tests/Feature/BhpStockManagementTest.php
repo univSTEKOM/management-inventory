@@ -162,15 +162,31 @@ class BhpStockManagementTest extends TestCase
         $this->assertEquals($this->category->id, $balance->fresh()->category_id);
     }
 
-    public function test_stock_action_is_unavailable_without_create_permission(): void
+    public function test_stock_action_is_unavailable_without_supplies_stock_in_permission(): void
     {
         $balance = $this->createSupply();
-        $viewer = User::factory()->create();
-        $viewer->roles()->attach(Role::where('name', 'Finance')->firstOrFail());
-        $this->actingAs($viewer);
+
+        // User dengan role Approver tidak memiliki permission supplies.stock_in
+        $approver = User::factory()->create();
+        $approver->roles()->attach(Role::where('name', 'Approver')->firstOrFail());
+        $this->actingAs($approver);
 
         Livewire::test(ListInventoryBalances::class)->assertTableActionHidden('stock_in', $balance);
         $this->assertEquals(1, $balance->fresh()->quantity);
+
+        // User dengan role Finance memiliki permission supplies.stock_in
+        $finance = User::factory()->create();
+        $finance->roles()->attach(Role::where('name', 'Finance')->firstOrFail());
+        $this->actingAs($finance);
+
+        Livewire::test(ListInventoryBalances::class)->assertTableActionVisible('stock_in', $balance);
+
+        // User dengan role Tim Inventaris juga memiliki permission supplies.stock_in
+        $inventaris = User::factory()->create();
+        $inventaris->roles()->attach(Role::where('name', 'Tim Inventaris')->firstOrFail());
+        $this->actingAs($inventaris);
+
+        Livewire::test(ListInventoryBalances::class)->assertTableActionVisible('stock_in', $balance);
     }
 
     public function test_empty_stock_can_be_replenished_without_reusing_old_barcodes(): void

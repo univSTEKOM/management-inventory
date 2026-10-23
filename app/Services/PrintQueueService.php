@@ -40,19 +40,19 @@ class PrintQueueService
     }
 
     /**
-     * Antre semua Asset berbarcode di satu Ruangan, urut Nama > Kode (sama
-     * kayak urutan cetak di lembar checklist lama). $onlyAssetIds (kalau
-     * diisi) membatasi ke Asset yang dicentang user di pop-up.
+     * Antre semua Asset berbarcode di satu Ruangan, urut Keterangan (A→Z, case-insensitive)
+     * lalu id sebagai tiebreaker stabil -- sama persis dengan urutan Cetak Checklist
+     * dan Cetak Barcode bulk. $onlyAssetIds (kalau diisi) membatasi ke Asset yang
+     * dicentang user di pop-up.
      *
      * @param  array<int>|null  $onlyAssetIds
      */
-    public function queueForLocation(int $locationId, string $stationKey, ?int $requestedBy, ?array $onlyAssetIds = null): int
+    public function queueForLocation(int $locationId, string $stationKey, ?int $requestedBy, ?array $onlyAssetIds = null, string $sortBy = 'notes'): int
     {
         $assets = Asset::where('location_id', $locationId)
             ->whereNotNull('barcode')
             ->when($onlyAssetIds !== null, fn ($q) => $q->whereIn('id', $onlyAssetIds))
-            ->orderBy('name')
-            ->orderBy('inventory_number')
+            ->orderedForPrint($sortBy)
             ->get();
 
         return $this->queueAssets($assets, $stationKey, $requestedBy);

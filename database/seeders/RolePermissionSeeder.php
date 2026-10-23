@@ -15,6 +15,8 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             // Asset
             'assets.view', 'assets.create', 'assets.update', 'assets.delete',
+            // Supplies (Barang Habis Pakai)
+            'supplies.stock_in',
             // Intake (Antrian Barang Masuk — Finance "Lengkapi Data")
             'intake.complete',
             // Master Data
@@ -55,6 +57,7 @@ class RolePermissionSeeder extends Seeder
             'Tim Inventaris' => [
                 'panel.inventory',
                 'assets.view', 'assets.create', 'assets.update',
+                'supplies.stock_in',
                 'categories.view', 'categories.create', 'categories.update',
                 'campuses.view', 'campuses.create', 'campuses.update',
                 'locations.view', 'locations.create', 'locations.update',
@@ -70,6 +73,7 @@ class RolePermissionSeeder extends Seeder
             'Finance' => [
                 'panel.inventory',
                 'assets.view',
+                'supplies.stock_in',
                 'intake.complete',
                 'financial.view', 'financial.export',
                 'reports.view', 'reports.export',
