@@ -14,7 +14,7 @@
         .col-no { width: 24px; text-align: center; }
         .col-check { width: 28px; text-align: center; }
         .check-box { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; }
-        .col-note { width: 100px; }
+        .col-note { width: 100px; white-space: pre-wrap; overflow-wrap: anywhere; }
         @page { size: A4; margin: 15mm; }
         @media print { body { padding: 0; } }
     </style>
@@ -50,7 +50,7 @@
                 <td>{{ $asset->brand }}</td>
                 <td>{{ $asset->pic?->name }}</td>
                 <td class="col-check"><span class="check-box"></span></td>
-                <td class="col-note"></td>
+                <td class="col-note">{{ $asset->notes }}</td>
             </tr>
             @endforeach
         </tbody>
