@@ -55,7 +55,12 @@
                         >
                             <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ $loop->iteration }}</td>
                             <td class="px-3 py-2 font-mono text-xs text-gray-950 dark:text-white" style="word-break: break-all;">{{ $asset->inventory_number }}</td>
-                            <td class="px-3 py-2 text-gray-950 dark:text-white" style="overflow-wrap: anywhere;">{{ $asset->name }}</td>
+                            <td class="px-3 py-2 text-gray-950 dark:text-white" style="overflow-wrap: anywhere;">
+                                <div>{{ $asset->name }}</div>
+                                @if(filled($asset->notes))
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Ket: {{ $asset->notes }}</div>
+                                @endif
+                            </td>
                             <td class="px-3 py-2 text-gray-600 dark:text-gray-300" style="overflow-wrap: anywhere;">{{ $asset->brand ?: '-' }}</td>
                             <td class="px-3 py-2 text-center">
                                 <x-filament::input.checkbox

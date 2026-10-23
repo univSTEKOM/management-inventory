@@ -27,6 +27,9 @@
             &mdash; {{ $assets->first()->printLocationLabel() }}
         @endif
         &mdash; Total: {{ $assets->count() }} barang
+        @if(!empty($sortLabel))
+            &mdash; Urut: {{ $sortLabel }}
+        @endif
     </div>
 
     <table>

@@ -54,11 +54,28 @@ Route::get('/checklist/print', function (Request $request) {
         abort(404);
     }
 
-    $assets = $query->orderBy('name')->orderBy('inventory_number')->get();
+    $sortBy = $request->string('sort_by', 'notes')->toString();
+
+    if ($request->filled('location_id') && $request->filled('sort_by')) {
+        session(['last_print_sort_' . $request->integer('location_id') => $sortBy]);
+        session(['last_print_sort' => $sortBy]);
+    }
+
+    $assets = $query->orderedForPrint($sortBy)->get();
 
     abort_if($assets->isEmpty(), 404, 'Tidak ada barang untuk dicetak.');
 
-    return view('checklist-print', ['assets' => $assets]);
+    $sortLabels = [
+        'notes' => 'Keterangan (A–Z)',
+        'name' => 'Nama Barang (A–Z)',
+        'inventory_number' => 'Kode Inventaris (A–Z)',
+    ];
+    $sortLabel = $sortLabels[$sortBy] ?? $sortLabels['notes'];
+
+    return view('checklist-print', [
+        'assets' => $assets,
+        'sortLabel' => $sortLabel,
+    ]);
 })->name('checklist.print')->middleware('auth');
 
 Route::get('/asset-photo-thumb/{path}', function (string $path) {

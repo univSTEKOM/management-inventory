@@ -65,11 +65,36 @@ class PrintChecklistActions
                     ->options(fn (callable $get) => Location::when($get('campus_id'), fn ($q) => $q->where('campus_id', $get('campus_id')))->pluck('name', 'id'))
                     ->searchable()
                     ->preload()
+                    ->live()
                     ->required()
-                    ->disabled(fn (callable $get) => blank($get('campus_id'))),
+                    ->disabled(fn (callable $get) => blank($get('campus_id')))
+                    ->afterStateUpdated(function (callable $set, $state) {
+                        if ($state) {
+                            $savedSort = session('last_print_sort_' . $state, session('last_print_sort', 'notes'));
+                            $set('sort_by', $savedSort);
+                        }
+                    }),
+
+                Select::make('sort_by')
+                    ->label('Urutan Cetak')
+                    ->options([
+                        'notes' => 'Keterangan (A–Z)',
+                        'name' => 'Nama Barang (A–Z)',
+                        'inventory_number' => 'Kode Inventaris (A–Z)',
+                    ])
+                    ->default('notes')
+                    ->required()
+                    ->helperText('Urutan data pada lembar checklist. Barcode yang dicetak nanti akan otomatis mengikuti urutan ini.'),
             ])
             ->action(function (array $data, $livewire) {
-                $url = route('checklist.print', ['location_id' => $data['location_id']]);
+                $sortBy = $data['sort_by'] ?? 'notes';
+                session(['last_print_sort_' . $data['location_id'] => $sortBy]);
+                session(['last_print_sort' => $sortBy]);
+
+                $url = route('checklist.print', [
+                    'location_id' => $data['location_id'],
+                    'sort_by' => $sortBy,
+                ]);
                 $livewire->js('window.open(' . json_encode($url) . ", '_blank')");
             })
             ->modalSubmitActionLabel('Cetak')
