@@ -13,7 +13,7 @@ class ListMutations extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\Action::make('create')->label('Mutasi Barang')->url(MutationResource::getUrl('create'))->visible(fn () => MutationResource::canCreate()),
         ];
     }
 }

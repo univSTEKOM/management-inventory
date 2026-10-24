@@ -2,7 +2,7 @@
 
 namespace App\Filament\Inventory\Widgets;
 
-use App\Models\AssetMovement;
+use App\Models\Mutation;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
@@ -15,20 +15,20 @@ class LatestAssetMovements extends TableWidget
 
     protected function getTableHeading(): string
     {
-        return 'Mutasi Aset Terbaru';
+        return 'Mutasi Barang Terbaru';
     }
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                AssetMovement::query()
-                    ->latest('movement_date')
+                Mutation::query()
+                    ->latest('mutation_date')
                     ->limit(5)
             )
             ->columns([
-                TextColumn::make('asset.name')
-                    ->label('Barang / Aset')
+                TextColumn::make('mutation_number')
+                    ->label('Nomor Mutasi')
                     ->searchable(),
                 TextColumn::make('sourceLocation.name')
                     ->label('Dari')
@@ -46,7 +46,7 @@ class LatestAssetMovements extends TableWidget
                         'rejected', 'cancelled' => 'danger',
                         default => 'gray',
                     }),
-                TextColumn::make('movement_date')
+                TextColumn::make('mutation_date')
                     ->label('Tanggal')
                     ->dateTime('d M Y'),
             ])

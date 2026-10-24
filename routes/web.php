@@ -131,3 +131,10 @@ Route::get('/asset-photo-download/{path}', function (Request $request, string $p
         'Content-Type' => $disk->mimeType($path) ?: 'application/octet-stream',
     ]);
 })->where('path', '.*')->name('asset.photo.download')->middleware('auth');
+
+Route::get('/mutation/{mutation}/receipt', function (\App\Models\Mutation $mutation) {
+    \Illuminate\Support\Facades\Gate::authorize('view', $mutation);
+    abort_unless($mutation->status === 'completed', 404);
+    $mutation->load(['items.asset.classification', 'items.inventoryBalance', 'sourceCampus', 'sourceLocation', 'destinationCampus', 'destinationLocation', 'sourcePic', 'destinationPic', 'requestedBy']);
+    return view('documents.mutation-receipt', compact('mutation'));
+})->middleware('auth')->name('mutation.receipt');

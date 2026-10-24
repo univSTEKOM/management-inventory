@@ -3,7 +3,7 @@
 namespace App\Filament\Inventory\Widgets;
 
 use App\Models\Asset;
-use App\Models\AssetMovement;
+use App\Models\Mutation;
 use App\Models\Location;
 use App\Models\StockOpname;
 use Filament\Widgets\StatsOverviewWidget;
@@ -22,7 +22,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
                     'class' => 'stat-primary',
                 ]),
 
-            Stat::make('Mutasi Menunggu Persetujuan', AssetMovement::where('status', 'pending')->count())
+            Stat::make('Mutasi Lama Belum Diproses', Mutation::whereIn('status', ['pending', 'approved'])->count())
                 ->description('Perlu ditindaklanjuti')
                 ->descriptionIcon('heroicon-m-arrow-path')
                 ->color('warning')

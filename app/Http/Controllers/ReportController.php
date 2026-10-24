@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Asset;
-use App\Models\AssetMovement;
+use App\Models\Mutation;
 use App\Models\StockOpname;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,7 +26,10 @@ class ReportController extends Controller
 
         // Determine data source based on report type
         if ($type === 'movements') {
-            $query = AssetMovement::with(['asset', 'sourceCampus', 'destinationCampus', 'requestedBy', 'approvedBy']);
+            $query = Mutation::with(['items.asset.classification', 'items.inventoryBalance', 'sourceCampus', 'sourceLocation', 'destinationCampus', 'destinationLocation', 'requestedBy']);
+            if ($campusId) $query->where('source_campus_id', $campusId);
+            if ($locationId) $query->where('source_location_id', $locationId);
+            if ($year) $query->whereYear('mutation_date', $year);
         } elseif ($type === 'stock_opname') {
             $query = StockOpname::with(['campus', 'location', 'items']);
         } elseif ($type === 'persediaan_only') {
