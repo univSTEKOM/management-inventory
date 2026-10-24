@@ -287,6 +287,7 @@
                                     <th scope="col" class="px-4 py-3">Kode / Barcode</th>
                                     <th scope="col" class="px-4 py-3">Barang / Merek</th>
                                     <th scope="col" class="px-4 py-3">Jenis</th>
+                                    <th scope="col" class="px-4 py-3">PIC</th>
                                     <th scope="col" class="px-4 py-3">Tersedia</th>
                                     <th scope="col" class="px-4 py-3 text-right">Aksi</th>
                                 </tr>
@@ -317,6 +318,16 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3">
+                                            @if ($result['pic_name'])
+                                                <span class="inline-flex items-center gap-1 text-xs text-gray-700 dark:text-gray-300">
+                                                    <x-filament::icon icon="heroicon-m-user" class="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                                    {{ $result['pic_name'] }}
+                                                </span>
+                                            @else
+                                                <span class="text-xs text-gray-400 dark:text-gray-600">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3">
                                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
                                                 {{ $result['available'] }} unit
                                             </span>
@@ -341,7 +352,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                        <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                                             <div class="flex flex-col items-center justify-center space-y-2">
                                                 @if (! $data['source_location_id'])
                                                     <x-filament::icon icon="heroicon-o-map-pin" class="w-8 h-8 text-gray-400 dark:text-gray-600" />

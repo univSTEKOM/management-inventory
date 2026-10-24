@@ -19,6 +19,7 @@ class MutationSearchService
             'brand' => $item->brand,
             'type' => $asset ? ($item->classification?->name ?? 'Barang individual') : 'Barang Habis Pakai',
             'available' => $asset ? 1 : (int) $item->quantity,
+            'pic_name' => $asset ? ($item->pic?->name ?? null) : null,
         ];
     }
 
@@ -29,7 +30,7 @@ class MutationSearchService
             return [];
         }
         $term = '%'.$search.'%';
-        $assets = Asset::with('classification')
+        $assets = Asset::with(['classification', 'pic'])
             ->where('campus_id', $campus)->where('location_id', $location)
             ->whereIn('status', MutationValidationService::ELIGIBLE_STATUSES)
             ->where(fn ($q) => $q->where('name', 'like', $term)
