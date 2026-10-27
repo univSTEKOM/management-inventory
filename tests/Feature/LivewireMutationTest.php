@@ -2,65 +2,39 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use App\Models\User;
-use App\Models\Asset;
-use App\Models\InventoryBalance;
-use App\Models\Campus;
-use App\Models\Location;
-use App\Models\Classification;
-use Livewire\Livewire;
 use App\Filament\Inventory\Resources\MutationResource\Pages\CreateMutation;
+use Filament\Facades\Filament;
+use Livewire\Livewire;
 
-class LivewireMutationTest extends TestCase
+class LivewireMutationTest extends \Tests\MutationTestCase
 {
-    use RefreshDatabase;
-
-    protected function setUp(): void
+    private function page()
     {
-        parent::setUp();
-        
-        $this->user = User::factory()->create();
-        $this->actingAs($this->user);
+        Filament::setCurrentPanel(Filament::getPanel('inventory'));
+        return Livewire::test(CreateMutation::class)
+            ->set('data.source_campus_id', $this->header['source_campus_id'])
+            ->set('data.source_location_id', $this->header['source_location_id'])
+            ->set('data.destination_campus_id', $this->header['destination_campus_id'])
+            ->set('data.destination_location_id', $this->header['destination_location_id'])
+            ->set('data.reason', 'Pindah ruangan');
     }
 
-    public function test_ui_filtering_asset()
+    public function test_searches_by_code_and_name(): void
     {
-        $classAset = Classification::create(['name' => 'Aset', 'slug' => 'aset']);
-        $classInv = Classification::create(['name' => 'Inventaris', 'slug' => 'inventaris']);
-        
-        $campusA = Campus::factory()->create();
-        $roomA = Location::factory()->create(['campus_id' => $campusA->id]);
-        $roomB = Location::factory()->create(['campus_id' => $campusA->id]);
-        
-        $assetA1 = Asset::factory()->create([
-            'classification_id' => $classAset->id,
-            'campus_id' => $campusA->id,
-            'location_id' => $roomA->id,
-            'status' => 'stock'
-        ]);
-        
-        $assetI1 = Asset::factory()->create([
-            'classification_id' => $classInv->id,
-            'campus_id' => $campusA->id,
-            'location_id' => $roomA->id,
-            'status' => 'stock'
-        ]);
-        
-        $assetA2 = Asset::factory()->create([
-            'classification_id' => $classAset->id,
-            'campus_id' => $campusA->id,
-            'location_id' => $roomB->id,
-            'status' => 'stock'
-        ]);
+        $page = $this->page()->set('search', $this->asset->inventory_number)->assertSee($this->asset->name);
+        $page->set('search', $this->asset->name)->assertSee($this->asset->inventory_number);
+        $page->call('addItem', 'asset:'.$this->asset->id)->call('addItem', 'asset:'.$this->asset->id)->assertCount('items', 1);
+    }
 
-        Livewire::test(CreateMutation::class)
-            ->set('data.type', 'asset')
-            ->set('data.source_campus_id', $campusA->id)
-            ->set('data.source_location_id', $roomA->id)
-            ->assertSee($assetA1->name) // Tampil
-            ->assertDontSee($assetI1->name) // Tidak tampil inventaris
-            ->assertDontSee($assetA2->name); // Tidak tampil beda ruangan
+    public function test_search_excludes_other_rooms_and_ineligible_assets(): void
+    {
+        $this->asset->update(['name' => 'Komputer asal']);
+        $other = \App\Models\Asset::factory()->create([
+            'name' => 'Komputer tujuan', 'campus_id' => $this->header['source_campus_id'],
+            'location_id' => $this->header['destination_location_id'],
+        ]);
+        $this->page()->set('search', 'Komputer')->assertSee('Komputer asal')->assertDontSee('Komputer tujuan');
+        $this->asset->update(['status' => 'lost']);
+        $this->page()->set('search', 'Komputer')->assertSee('Tidak ada barang yang cocok');
     }
 }

@@ -68,7 +68,7 @@ class Mutation extends Model
     {
         static::creating(function (Mutation $mutation) {
             if (empty($mutation->mutation_number)) {
-                $prefix = strtoupper(substr($mutation->type ?? 'MUT', 0, 3));
+                $prefix = $mutation->type === 'mixed' ? 'MUT' : strtoupper(substr($mutation->type ?? 'MUT', 0, 3));
                 $mutation->mutation_number = $prefix . '-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(5));
             }
         });
@@ -100,6 +100,15 @@ class Mutation extends Model
                     'status_after' => $movement->status,
                 ]
             ];
+
+            if ($movement->wasChanged('status') && $movement->status === 'completed') {
+                $metadata['items'] = $movement->items()->get()->map(fn ($item) => [
+                    'asset_id' => $item->asset_id,
+                    'inventory_balance_id' => $item->inventory_balance_id,
+                    'quantity' => $item->quantity,
+                    'snapshot' => $item->snapshot,
+                ])->all();
+            }
 
             $reason = request()->input('reject_reason') ?? request()->input('approval_note');
 

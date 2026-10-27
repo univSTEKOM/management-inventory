@@ -79,7 +79,7 @@ class MutationIdentityPreservationTest extends TestCase
             'destination_location_id' => $roomB->id,
             'reason' => 'Test Mutasi',
             'status' => 'approved',
-            'created_by' => Auth::id(),
+            'requested_by' => Auth::id(),
             'approved_by' => Auth::id(),
         ]);
 
@@ -155,7 +155,7 @@ class MutationIdentityPreservationTest extends TestCase
             'destination_location_id' => $roomB->id,
             'reason' => 'Test Mutasi',
             'status' => 'completed',
-            'created_by' => Auth::id(),
+            'requested_by' => Auth::id(),
             'approved_by' => Auth::id(),
         ]);
 
@@ -168,6 +168,7 @@ class MutationIdentityPreservationTest extends TestCase
         // Because Livewire tests in Filament don't directly render the forms like this without full panel setup,
         // we test the underlying Resource options closure directly to prove the logic change works.
         // Or we just test the Page
+        auth()->user()->permissions()->syncWithoutDetaching([\App\Models\Permission::firstOrCreate(['name' => 'movements.view'])->id]);
         Livewire::test(ViewMutation::class, ['record' => $mutation->getRouteKey()])
             ->assertSuccessful();
             

@@ -12,6 +12,20 @@ class MutationItem extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = ['snapshot' => 'array'];
+
+    public function getDisplayDetailsAttribute(): array
+    {
+        if ($this->snapshot) {
+            return $this->snapshot;
+        }
+        $item = $this->asset ?? $this->inventoryBalance;
+        return $item ? \App\Services\MutationSearchService::describe($item) : [
+            'name' => 'Barang tidak tersedia', 'type' => '—',
+        ];
+    }
+
+
     public function mutation(): BelongsTo
     {
         return $this->belongsTo(Mutation::class);

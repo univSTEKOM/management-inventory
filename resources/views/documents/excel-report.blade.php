@@ -24,7 +24,7 @@
 
                 @if(in_array($type, ['movements']))
                     <th style="background-color: #d9d9d9;">Tgl Mutasi</th>
-                    <th style="background-color: #d9d9d9;">Nama Aset</th>
+                    <th style="background-color: #d9d9d9;">Nomor Mutasi / Barang</th>
                     <th style="background-color: #d9d9d9;">Dari Gedung</th>
                     <th style="background-color: #d9d9d9;">Ke Gedung</th>
                     <th style="background-color: #d9d9d9;">Pemohon</th>
@@ -63,8 +63,12 @@
                     <td>{{ $index + 1 }}</td>
 
                     @if(in_array($type, ['movements']))
-                        <td>{{ $row->movement_date ? $row->movement_date->format('d/m/Y') : '-' }}</td>
-                        <td>{{ $row->asset->name ?? '-' }}</td>
+                        <td>{{ $row->mutation_date ? $row->mutation_date->format('d/m/Y') : '-' }}</td>
+                        <td>{{ $row->mutation_number }}<br>
+                            @foreach ($row->items as $item)
+                                {{ $item->display_details['name'] }} {{ $item->display_details['brand'] ?? '' }}
+                                ({{ $item->display_details['code'] ?? $item->display_details['barcode'] ?? '—' }}) × {{ $item->quantity }}<br>
+                            @endforeach</td>
                         <td>{{ $row->sourceCampus->name ?? '-' }}</td>
                         <td>{{ $row->destinationCampus->name ?? '-' }}</td>
                         <td>{{ $row->requestedBy->name ?? '-' }}</td>
