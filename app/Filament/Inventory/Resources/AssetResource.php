@@ -321,7 +321,8 @@ class AssetResource extends Resource
                             ->createOptionForm([
                                 Components\TextInput::make('name')->label('Nama Gedung')->required(),
                                 Components\Textarea::make('address')->label('Alamat'),
-                            ]),
+                            ])
+                            ->native(false),
 
                         Components\Select::make('location_id')
                             ->label('Ruangan')
@@ -344,7 +345,8 @@ class AssetResource extends Resource
                                     ->required()
                                     ->default(fn (callable $get) => $get('../../campus_id')),
                                 Components\TextInput::make('name')->label('Nama Ruangan')->required(),
-                            ]),
+                            ])
+                            ->native(false),
                     ])
                     ->columns(['default' => 1, 'md' => 2])
                     ->visible(fn (callable $get) => filled($get('classification_id'))),

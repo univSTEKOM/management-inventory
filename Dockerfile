@@ -34,6 +34,7 @@
             echo "memory_limit = 512M"; \
             echo "max_file_uploads = 50"; \
             echo "max_input_time = 120"; \
+            echo "max_execution_time = 120"; \
         } > "$PHP_INI_DIR/conf.d/zz-uploads.ini"
 
     # redis dibangun dari source GitHub — pecl.php.net channel metadata sedang rusak
