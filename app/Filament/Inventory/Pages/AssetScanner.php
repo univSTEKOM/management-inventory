@@ -171,12 +171,10 @@ class AssetScanner extends Page implements HasForms
 
         $addedPaths = array_diff($newPaths, $existingPaths);
         foreach ($addedPaths as $path) {
-            /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-            $disk = \Illuminate\Support\Facades\Storage::disk('s3');
             $record->photos()->create([
-                'file_path' => $path,
-                'file_size' => $disk->exists($path) ? $disk->size($path) : null,
-                'mime_type' => $disk->exists($path) ? $disk->mimeType($path) : null,
+                'file_path'  => $path,
+                'file_size'  => null,
+                'mime_type'  => null,
             ]);
         }
 
