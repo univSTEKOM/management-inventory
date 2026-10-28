@@ -40,14 +40,15 @@ class InventoryPanelProvider extends PanelProvider
                     ->icon('heroicon-o-user-circle')
                     ->sort(-100),
             ])
-            ->brandLogo(asset('logo.png'))
-            ->brandLogoHeight('2.5rem')
+            ->brandLogo(fn () => view('filament.components.brand-logo'))
+            ->brandLogoHeight('5rem')
+            ->font('Outfit')
             ->favicon(asset('favicon.png'))
             ->colors([
                 'primary' => Color::Blue,
             ])
             ->databaseNotifications()
-            ->sidebarWidth('17rem')
+            ->sidebarWidth('20rem')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
                 'Asset Management',
@@ -56,6 +57,10 @@ class InventoryPanelProvider extends PanelProvider
                 'Reports',
             ])
             ->maxContentWidth(Width::Full)
+            ->renderHook(
+                PanelsRenderHook::HEAD_START,
+                fn () => view('filament.components.brand-fonts')
+            )
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn () => view('filament.components.header-tools')
