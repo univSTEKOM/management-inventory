@@ -113,23 +113,44 @@ class AddPhotoActions
             ->deselectRecordsAfterCompletion();
     }
 
+    public static function recordHasPhoto(mixed $record): bool
+    {
+        if ($record instanceof UnifiedItem) {
+            return (bool) $record->has_photo;
+        }
+
+        if ($record instanceof Asset) {
+            return (bool) ($record->has_photo ?? $record->photos()->where('file_path', '<>', '')->exists());
+        }
+
+        if ($record instanceof InventoryBalance) {
+            return filled($record->photo);
+        }
+
+        return false;
+    }
+
     public static function rowAction(): Action
     {
         return Action::make('addPhoto')
             ->label('Tambah Foto')
             ->icon('heroicon-o-camera')
             ->color('success')
-            ->visible(fn (UnifiedItem $record) => ! $record->has_photo && ItemPhotoService::userCanManage(Auth::user()))
+            ->visible(fn (mixed $record) => ! static::recordHasPhoto($record) && ItemPhotoService::userCanManage(Auth::user()))
             ->authorize(fn () => ItemPhotoService::userCanManage(Auth::user()))
             ->modalHeading('Tambah Foto Barang')
             ->modalWidth('lg')
-            ->schema(fn (UnifiedItem $record): array => [
+            ->schema(fn (mixed $record): array => [
                 Placeholder::make('item')
                     ->label('Barang')
-                    ->content(static::unifiedItemIdentity($record)),
-                static::photoUpload($record->row_type === 'supply' ? 1 : ItemPhotoService::MAX_ASSET_PHOTOS),
+                    ->content(static::itemIdentity($record)),
+                static::photoUpload(
+                    ($record instanceof InventoryBalance || ($record instanceof UnifiedItem && $record->row_type === 'supply'))
+                        ? 1
+                        : ItemPhotoService::MAX_ASSET_PHOTOS
+                ),
             ])
-            ->action(function (UnifiedItem $record, array $data) {
+            ->action(function (mixed $record, array $data) {
                 $result = static::runApply(
                     ItemPhotoService::targetsFromRecords([$record]),
                     $data['photo'] ?? null,
@@ -152,12 +173,12 @@ class AddPhotoActions
             ->label('Lihat Foto')
             ->icon('heroicon-o-photo')
             ->color('info')
-            ->visible(fn (UnifiedItem $record) => (bool) $record->has_photo)
-            ->modalHeading(fn (UnifiedItem $record) => 'Foto: '.$record->item_name)
+            ->visible(fn (mixed $record) => static::recordHasPhoto($record))
+            ->modalHeading(fn (mixed $record) => 'Foto: '.($record instanceof UnifiedItem ? $record->item_name : ($record->name ?? 'Barang')))
             ->modalWidth('2xl')
             ->modalSubmitAction(false)
             ->modalCancelActionLabel('Tutup')
-            ->schema(fn (UnifiedItem $record): array => [
+            ->schema(fn (mixed $record): array => [
                 Placeholder::make('photos_gallery')
                     ->hiddenLabel()
                     ->content(static::buildPhotoGalleryHtml($record)),
@@ -168,12 +189,12 @@ class AddPhotoActions
      * Bangun HTML galeri foto untuk modal viewPhotoAction.
      * Asset → asset_photos table. Supply → inventory_balances.photo column.
      */
-    protected static function buildPhotoGalleryHtml(UnifiedItem $record): HtmlString
+    protected static function buildPhotoGalleryHtml(mixed $record): HtmlString
     {
         $urls = [];
 
-        if ($record->row_type === 'asset') {
-            $photos = Asset::find((int) $record->raw_id)?->photos()->orderBy('sort_order')->get(['file_path']) ?? collect();
+        if ($record instanceof Asset) {
+            $photos = $record->photos()->orderBy('sort_order')->get(['file_path']);
             foreach ($photos as $photo) {
                 if (filled($photo->file_path)) {
                     $urls[] = [
@@ -182,13 +203,32 @@ class AddPhotoActions
                     ];
                 }
             }
-        } else {
-            $balance = InventoryBalance::find((int) $record->raw_id);
-            if ($balance && filled($balance->photo)) {
+        } elseif ($record instanceof InventoryBalance) {
+            if (filled($record->photo)) {
                 $urls[] = [
-                    'thumb' => Storage::disk('s3_thumb')->url($balance->photo),
-                    'full' => Storage::disk('s3')->url($balance->photo),
+                    'thumb' => Storage::disk('s3_thumb')->url($record->photo),
+                    'full' => Storage::disk('s3')->url($record->photo),
                 ];
+            }
+        } elseif ($record instanceof UnifiedItem) {
+            if ($record->row_type === 'asset') {
+                $photos = Asset::find((int) $record->raw_id)?->photos()->orderBy('sort_order')->get(['file_path']) ?? collect();
+                foreach ($photos as $photo) {
+                    if (filled($photo->file_path)) {
+                        $urls[] = [
+                            'thumb' => Storage::disk('s3_thumb')->url($photo->file_path),
+                            'full' => Storage::disk('s3')->url($photo->file_path),
+                        ];
+                    }
+                }
+            } else {
+                $balance = InventoryBalance::find((int) $record->raw_id);
+                if ($balance && filled($balance->photo)) {
+                    $urls[] = [
+                        'thumb' => Storage::disk('s3_thumb')->url($balance->photo),
+                        'full' => Storage::disk('s3')->url($balance->photo),
+                    ];
+                }
             }
         }
 
@@ -350,6 +390,44 @@ class AddPhotoActions
             '<p class="text-sm font-medium">'.e("{$items->count()} barang akan diperbarui:").'</p>'
             .'<ul class="mt-2 max-h-64 overflow-y-auto divide-y divide-gray-200 rounded-lg border border-gray-200 px-3 text-sm dark:divide-white/10 dark:border-white/10">'.$rows.'</ul>'
             .$notes
+        );
+    }
+
+    protected static function itemIdentity(mixed $record): HtmlString
+    {
+        if ($record instanceof UnifiedItem) {
+            return static::unifiedItemIdentity($record);
+        }
+
+        if ($record instanceof Asset) {
+            $parts = array_filter([
+                $record->inventory_number ?: $record->barcode,
+                $record->name,
+                $record->brand ? "({$record->brand})" : null,
+            ]);
+
+            $meta = array_filter([
+                $record->classification?->name,
+                $record->location?->name,
+            ]);
+        } elseif ($record instanceof InventoryBalance) {
+            $parts = array_filter([
+                $record->name,
+                $record->brand ? "({$record->brand})" : null,
+            ]);
+
+            $meta = array_filter([
+                $record->category?->name,
+                $record->location?->name,
+            ]);
+        } else {
+            $parts = [class_basename($record)];
+            $meta = [];
+        }
+
+        return new HtmlString(
+            '<span class="font-medium">'.e(implode(' ', $parts)).'</span>'
+            .($meta ? '<br><span class="text-xs text-gray-500">'.e(implode(' · ', $meta)).'</span>' : '')
         );
     }
 

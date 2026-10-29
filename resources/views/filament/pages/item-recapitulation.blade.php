@@ -1,4 +1,4 @@
-﻿<x-filament-panels::page>
+<x-filament-panels::page>
     <x-filament::section heading="Lihat jumlah barang berdasarkan lokasi">
         <p class="text-sm text-gray-600 dark:text-gray-300">
             @if ($selectedRoom)
@@ -61,97 +61,88 @@
         @endif
     </div>
 
+    {{-- 3 KPI Summary Cards: Aset, Inventaris, Stok BHP --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {{-- Card 1: Barang Individual --}}
+        {{-- Card 1: Aset --}}
         <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
             <div class="flex items-start justify-between">
                 <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 mb-2">
-                        Aset & inventaris
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 mb-2">
+                        Klasifikasi Aset
                     </span>
                     <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Barang Individual
+                        Aset Tetap
                     </p>
-                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
-                        {{ number_format($individualCount) }}
-                    </h3>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                        <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                            {{ number_format($assetCount) }}
+                        </h3>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">unit</span>
+                    </div>
                 </div>
                 <div class="rounded-xl p-3 bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
                     <x-filament::icon icon="heroicon-o-cube" class="w-6 h-6" />
                 </div>
             </div>
             <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Aset tetap & inventaris ber-barcode terdata pada cakupan ini.
+                Unit barang aset tetap dengan pencatatan individual di lokasi ini.
             </p>
             <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
         </div>
 
-        {{-- Card 2: Stok BHP --}}
+        {{-- Card 2: Inventaris --}}
         <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
             <div class="flex items-start justify-between">
                 <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mb-2">
-                        Barang habis pakai
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 mb-2">
+                        Klasifikasi Inventaris
                     </span>
                     <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Jumlah stok BHP
+                        Inventaris
                     </p>
-                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
-                        {{ number_format($stockQuantity) }}
-                    </h3>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                        <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                            {{ number_format($inventoryCount) }}
+                        </h3>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">unit</span>
+                    </div>
+                </div>
+                <div class="rounded-xl p-3 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50">
+                    <x-filament::icon icon="heroicon-o-tag" class="w-6 h-6" />
+                </div>
+            </div>
+            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Unit barang inventaris penunjang operasional di lokasi ini.
+            </p>
+            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+        </div>
+
+        {{-- Card 3: Stok BHP --}}
+        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
+            <div class="flex items-start justify-between">
+                <div>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mb-2">
+                        Barang Habis Pakai
+                    </span>
+                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        Stok BHP
+                    </p>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                        <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                            {{ number_format($stockQuantity) }}
+                        </h3>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">total stok</span>
+                    </div>
                 </div>
                 <div class="rounded-xl p-3 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
                     <x-filament::icon icon="heroicon-o-circle-stack" class="w-6 h-6" />
                 </div>
             </div>
             <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Akumulasi seluruh jumlah kuantitas stok barang habis pakai.
+                Akumulasi seluruh kuantitas stok barang habis pakai yang tersedia.
             </p>
             <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-600"></div>
         </div>
-
-        {{-- Card 3: Lokasi yang ditampilkan --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
-            <div class="flex items-start justify-between">
-                <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 mb-2">
-                        Cakupan rekap
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Lokasi yang ditampilkan
-                    </p>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mt-1.5 break-words">
-                        @if ($selectedRoom)
-                            {{ $selectedRoom->name }}
-                        @elseif ($selectedCampus)
-                            {{ $selectedCampus->name }}
-                        @else
-                            Seluruh Homebase
-                        @endif
-                    </h3>
-                </div>
-                <div class="rounded-xl p-3 bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50">
-                    <x-filament::icon icon="heroicon-o-map-pin" class="w-6 h-6" />
-                </div>
-            </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                @if ($selectedRoom)
-                    Homebase: <strong class="text-gray-700 dark:text-gray-300">{{ $selectedCampus->name }}</strong>
-                @elseif ($selectedCampus)
-                    <strong class="text-gray-700 dark:text-gray-300">{{ $groups->count() }}</strong> Ruangan terdaftar di homebase ini
-                @else
-                    <strong class="text-gray-700 dark:text-gray-300">{{ $groups->count() }}</strong> Homebase terdaftar di sistem
-                @endif
-            </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 to-orange-600"></div>
-        </div>
-        @foreach (['Aset' => $assetCount, 'Inventaris' => $inventoryCount, 'Stok BHP' => $stockQuantity] as $label => $count)
-            <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ $label }}</p>
-                <h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ number_format($count) }}</h3>
-                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ $label === 'Stok BHP' ? 'Kuantitas stok; dapat mencakup beberapa satuan.' : 'Unit dengan klasifikasi '.$label.' di lokasi ini.' }}</p>
-            </div>
-        @endforeach
     </div>
 
     {{-- Information Callout --}}
@@ -314,75 +305,11 @@
                     </x-filament::button>
                 @endif
                 <div class="w-full sm:max-w-xs">
-
-                    <label for="recap-search" class="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">Cari barang di lokasi ini</label>
-                    <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
-                        <x-filament::input
-                            id="recap-search"
-                            aria-describedby="recap-search-help"
-                            wire:model.live.debounce.300ms="search"
-                            type="search"
-                            placeholder="Nama barang, barcode, atau merek"
-                        />
-
                     <label for="recap-search" class="sr-only">Cari barang</label>
                     <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
                         <x-filament::input id="recap-search" wire:model.live.debounce.300ms="search" type="search" placeholder="Cari nama, merek, atau barcode..." />
                     </x-filament::input.wrapper>
-                    <p id="recap-search-help" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Hasil diperbarui saat Anda mengetik.</p>
                 </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    {{-- Type Filter Buttons --}}
-                    <div role="group" aria-label="Filter jenis barang" class="inline-flex flex-wrap rounded-lg p-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/10 text-xs font-medium">
-                        <button
-                            type="button"
-                            wire:click="setType('all')"
-                            aria-pressed="{{ $type === 'all' ? 'true' : 'false' }}"
-                            wire:loading.attr="disabled"
-                            class="min-h-11 px-3 py-2 rounded-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 {{ $type === 'all' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
-                        >
-                            Semua
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="setType('asset')"
-                            aria-pressed="{{ $type === 'asset' ? 'true' : 'false' }}"
-                            wire:loading.attr="disabled"
-                            class="min-h-11 px-3 py-2 rounded-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 {{ $type === 'asset' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
-                        >
-                            Barang Individual
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="setType('supply')"
-                            aria-pressed="{{ $type === 'supply' ? 'true' : 'false' }}"
-                            wire:loading.attr="disabled"
-                            class="min-h-11 px-3 py-2 rounded-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 {{ $type === 'supply' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
-                        >
-                            Stok BHP
-                        </button>
-                    </div>
-
-                    @if (filled($search) || $type !== 'all')
-                        <x-filament::button
-                            wire:click="resetFilters"
-                            size="sm"
-                            color="gray"
-                            icon="heroicon-m-x-mark"
-                        >
-                            Hapus filter
-                        </x-filament::button>
-                    @endif
-                </div>
-            </div>
-
-            <p role="status" aria-live="polite" class="mb-3 text-sm text-gray-600 dark:text-gray-300">
-                <span wire:loading wire:target="search,setType,resetFilters,gotoPage,nextPage,previousPage">Memperbarui daftar barang…</span>
-                <span wire:loading.remove wire:target="search,setType,resetFilters,gotoPage,nextPage,previousPage">{{ number_format($items->total()) }} barang sesuai pencarian dan jenis yang dipilih.</span>
-            </p>
-            <div role="region" aria-label="Rincian barang, geser untuk melihat semua kolom" tabindex="0" class="overflow-x-auto -mx-6 -mb-6 focus-visible:outline-2 focus-visible:outline-primary-600">
-=======
                 <div class="flex flex-wrap gap-2" aria-label="Filter jenis barang">
                     @foreach (['all' => 'Semua', 'asset' => 'Aset', 'inventory' => 'Inventaris', 'supply' => 'Stok BHP'] as $value => $label)
                         <x-filament::button wire:click="setType('{{ $value }}')" :color="$type === $value ? 'primary' : 'gray'" size="sm" :aria-pressed="$type === $value ? 'true' : 'false'">{{ $label }}</x-filament::button>
@@ -432,20 +359,18 @@
                                 <td colspan="6" class="py-10 px-6 text-center text-gray-500 dark:text-gray-400">
                                     <div class="flex flex-col items-center justify-center">
                                         <x-filament::icon icon="heroicon-o-archive-box-x-mark" class="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-                                        <p class="font-medium text-gray-700 dark:text-gray-300">{{ filled($search) || $type !== 'all' ? 'Tidak ada barang yang cocok.' : 'Belum ada barang di lokasi ini.' }}</p>
+                                        <p class="font-medium text-gray-700 dark:text-gray-300">{{ filled($search) || $type !== 'all' ? 'Tidak ada barang yang cocok dengan filter pencarian.' : 'Belum ada barang di lokasi ini.' }}</p>
                                         @if (filled($search) || $type !== 'all')
-                                            <p class="text-xs text-gray-400 mt-1">Coba kata kunci lain atau hapus filter untuk melihat semua barang di lokasi ini.</p>
+                                            <p class="text-xs text-gray-400 mt-1">Coba gunakan kata kunci lain atau reset filter untuk menampilkan semua data.</p>
                                             <div class="mt-3">
-                                                <x-filament::button wire:click="resetFilters" size="sm" color="gray">
-                                                    Hapus Filter Pencarian
+                                                <x-filament::button wire:click="resetFilters" size="sm" color="gray" icon="heroicon-m-x-mark">
+                                                    Reset Filter
                                                 </x-filament::button>
                                             </div>
                                         @endif
                                     </div>
                                 </td>
                             </tr>
-=======
-                            <tr><td colspan="6" class="p-8 text-center text-gray-500">Tidak ada barang yang sesuai pada lokasi ini.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

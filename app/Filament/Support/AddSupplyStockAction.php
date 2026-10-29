@@ -27,8 +27,17 @@ class AddSupplyStockAction
             ->modalHeading(fn (InventoryBalance $record) => 'Tambah Stok: '.$record->name)
             ->form([
                 TextInput::make('quantity')->label('Jumlah Tambahan')->integer()->minValue(1)->required(),
-                TextInput::make('unit')->label('Satuan')->maxLength(255)
-                    ->default(fn (InventoryBalance $record) => $record->purchaseItems()->latest('id')->value('unit')),
+                Select::make('unit')
+                    ->label('Satuan')
+                    ->options([
+                        'Unit' => 'Unit', 'Pcs' => 'Pcs', 'Set' => 'Set',
+                        'Roll' => 'Roll', 'Rim' => 'Rim', 'Dus' => 'Dus', 'Box' => 'Box',
+                        'Kg' => 'Kg', 'Paket' => 'Paket', 'Lembar' => 'Lembar',
+                        'Buah' => 'Buah', 'Meter' => 'Meter', 'Liter' => 'Liter',
+                    ])
+                    ->default(fn (InventoryBalance $record) => $record->purchaseItems()->latest('id')->value('unit'))
+                    ->searchable()
+                    ->native(false),
                 DatePicker::make('purchase_date')->label('Tanggal Perolehan'),
                 TextInput::make('unit_price')->label('Harga Satuan')->numeric()->minValue(0),
                 Select::make('ownership')->label('Sumber Dana')

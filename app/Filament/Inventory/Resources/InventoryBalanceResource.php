@@ -67,16 +67,15 @@ class InventoryBalanceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('photo')
+                Tables\Columns\IconColumn::make('has_photo')
                     ->label('Foto')
-                    ->disk('s3')
-                    ->height(48)
-                    ->width(48)
-                    ->defaultImageUrl(null)
-                    ->extraImgAttributes(['class' => 'rounded-md object-cover cursor-pointer'])
-                    ->url(fn ($record) => $record->photo
-                        ? Storage::disk('s3')->url($record->photo)
-                        : null, true)
+                    ->boolean()
+                    ->getStateUsing(fn (InventoryBalance $record): bool => filled($record->photo))
+                    ->trueIcon('heroicon-o-photo')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->tooltip(fn (InventoryBalance $record): string => filled($record->photo) ? 'Sudah ada foto' : 'Belum ada foto')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Barang')
@@ -123,10 +122,24 @@ class InventoryBalanceResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('photo_status')
+                    ->label('Status Foto')
+                    ->placeholder('Semua')
+                    ->options([
+                        'with' => 'Sudah Ada Foto',
+                        'without' => 'Belum Ada Foto',
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        'with' => $query->whereNotNull('photo')->where('photo', '<>', ''),
+                        'without' => $query->where(fn ($q) => $q->whereNull('photo')->orWhere('photo', '')),
+                        default => $query,
+                    })
+                    ->native(false),
             ])
             ->actions([
                 ActionGroup::make([
+                    \App\Filament\Support\AddPhotoActions::viewPhotoAction(),
+                    \App\Filament\Support\AddPhotoActions::rowAction(),
                     Action::make('edit_info')
                         ->authorize(fn () => Auth::user()?->hasPermissionTo('supplies.update') ?? false)
                         ->label('Edit')
@@ -324,6 +337,7 @@ class InventoryBalanceResource extends Resource
             ->deselectAllRecordsWhenFiltered(false)
             ->selectCurrentPageOnly()
             ->bulkActions([
+                \App\Filament\Support\AddPhotoActions::bulkAction(),
                 MoveLocationActions::bulkAction(),
                 ChangeCategoryActions::bulkAction(),
                 DeleteItemsActions::bulkAction(),

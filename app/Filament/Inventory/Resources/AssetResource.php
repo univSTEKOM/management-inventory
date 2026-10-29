@@ -267,6 +267,7 @@ class AssetResource extends Resource
                                 ->label('Satuan')
                                 ->options([
                                     'Unit' => 'Unit', 'Pcs' => 'Pcs', 'Set' => 'Set',
+                                    'Roll' => 'Roll', 'Rim' => 'Rim', 'Dus' => 'Dus', 'Box' => 'Box',
                                     'Kg' => 'Kg', 'Paket' => 'Paket', 'Lembar' => 'Lembar',
                                     'Buah' => 'Buah', 'Meter' => 'Meter', 'Liter' => 'Liter',
                                 ])
@@ -545,6 +546,16 @@ class AssetResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                Tables\Columns\IconColumn::make('has_photo')
+                    ->label('Foto')
+                    ->boolean()
+                    ->getStateUsing(fn (Asset $record): bool => (bool) ($record->has_photo ?? $record->photos()->where('file_path', '<>', '')->exists()))
+                    ->trueIcon('heroicon-o-photo')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->tooltip(fn (Asset $record): string => ($record->has_photo ?? $record->photos()->where('file_path', '<>', '')->exists()) ? 'Sudah ada foto' : 'Belum ada foto')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('barcode')
                     ->label('Barcode')
                     ->toggleable()
@@ -648,6 +659,19 @@ class AssetResource extends Resource
                     }),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('photo_status')
+                    ->label('Status Foto')
+                    ->placeholder('Semua')
+                    ->options([
+                        'with' => 'Sudah Ada Foto',
+                        'without' => 'Belum Ada Foto',
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        'with' => $query->whereHas('photos', fn ($q) => $q->where('file_path', '<>', '')),
+                        'without' => $query->whereDoesntHave('photos', fn ($q) => $q->where('file_path', '<>', '')),
+                        default => $query,
+                    })
+                    ->native(false),
                 Tables\Filters\SelectFilter::make('classification_id')
                     ->label('Kategori Akuntansi')
                     ->relationship('classification', 'name'),
@@ -721,6 +745,8 @@ class AssetResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
+                    AddPhotoActions::viewPhotoAction(),
+                    AddPhotoActions::rowAction(),
                     PrintBarcodeActions::viewAction(),
                     PrintBarcodeActions::rowAction(),
                     Action::make('changeStatus')
@@ -852,6 +878,12 @@ class AssetResource extends Resource
             ])
             ->emptyStateHeading('Belum ada Barang/Aset')
             ->emptyStateDescription('Mulai kelola inventaris Anda dengan menambahkan barang baru.');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withExists(['photos as has_photo' => fn (Builder $q) => $q->where('file_path', '<>', '')]);
     }
 
     public static function getPages(): array

@@ -34,6 +34,7 @@ abstract class BaseCategoryAssetResource extends Resource
         };
 
         return parent::getEloquentQuery()
+            ->withExists(['photos as has_photo' => fn (Builder $q) => $q->where('file_path', '<>', '')])
             ->whereHas('classification', fn (Builder $q) => $q->where('slug', $slug))
             ->whereNotIn('status', ['baru_dilaporkan', 'menunggu_pengecekan']);
     }
@@ -71,6 +72,16 @@ abstract class BaseCategoryAssetResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\IconColumn::make('has_photo')
+                    ->label('Foto')
+                    ->boolean()
+                    ->getStateUsing(fn (Asset $record): bool => (bool) ($record->has_photo ?? $record->photos()->where('file_path', '<>', '')->exists()))
+                    ->trueIcon('heroicon-o-photo')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->tooltip(fn (Asset $record): string => ($record->has_photo ?? $record->photos()->where('file_path', '<>', '')->exists()) ? 'Sudah ada foto' : 'Belum ada foto')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('inventory_number')
                     ->label('Kode Barang')
                     ->toggleable()
@@ -178,6 +189,19 @@ abstract class BaseCategoryAssetResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                Tables\Filters\SelectFilter::make('photo_status')
+                    ->label('Status Foto')
+                    ->placeholder('Semua')
+                    ->options([
+                        'with' => 'Sudah Ada Foto',
+                        'without' => 'Belum Ada Foto',
+                    ])
+                    ->query(fn (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder => match ($data['value'] ?? null) {
+                        'with' => $query->whereHas('photos', fn ($q) => $q->where('file_path', '<>', '')),
+                        'without' => $query->whereDoesntHave('photos', fn ($q) => $q->where('file_path', '<>', '')),
+                        default => $query,
+                    })
+                    ->native(false),
                 Tables\Filters\SelectFilter::make('category_id')
                     ->label('Kategori')
                     ->relationship(
@@ -252,6 +276,8 @@ abstract class BaseCategoryAssetResource extends Resource
                         ->icon('heroicon-o-pencil-square')
                         ->url(fn ($record) => static::getEditUrl($record))
                         ->visible(fn ($record) => Auth::user()->can('update', $record)),
+                    \App\Filament\Support\AddPhotoActions::viewPhotoAction(),
+                    \App\Filament\Support\AddPhotoActions::rowAction(),
                     \App\Filament\Support\PrintBarcodeActions::viewAction(),
                     \App\Filament\Support\PrintBarcodeActions::rowAction(),
                 ]),
