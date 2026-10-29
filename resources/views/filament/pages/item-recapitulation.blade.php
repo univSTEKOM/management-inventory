@@ -1,4 +1,20 @@
 <x-filament-panels::page>
+    <x-filament::section heading="Lihat jumlah barang berdasarkan lokasi">
+        <p class="text-sm text-gray-600 dark:text-gray-300">
+            @if ($selectedRoom)
+                Anda sedang melihat barang di {{ $selectedRoom->name }}. Gunakan pencarian atau pilih jenis barang untuk mempersempit daftar.
+            @elseif ($selectedCampus)
+                Pilih ruangan untuk melihat isinya, atau cari barang pada daftar di bawah rekap ruangan.
+            @else
+                Mulai dengan memilih homebase pada tabel di bawah. Setelah itu, pilih ruangan atau cari barang yang Anda butuhkan.
+            @endif
+        </p>
+        <ol aria-label="Urutan penelusuran barang" class="mt-3 flex flex-wrap gap-3 text-sm text-gray-700 dark:text-gray-200">
+            <li>1. Pilih homebase</li>
+            <li>2. Pilih ruangan</li>
+            <li>3. Temukan barang</li>
+        </ol>
+    </x-filament::section>
     {{-- Breadcrumb & Scope Navigation Bar --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-xs">
         <nav aria-label="Navigasi rekapitulasi" class="flex items-center flex-wrap gap-2 text-sm">
@@ -35,7 +51,7 @@
                 <x-filament::button
                     :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl()"
                     tag="a"
-                    size="xs"
+                    size="sm"
                     color="gray"
                     icon="heroicon-m-arrow-uturn-left"
                 >
@@ -52,7 +68,7 @@
             <div class="flex items-start justify-between">
                 <div>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 mb-2">
-                        Unit Fisik Unik
+                        Aset & inventaris
                     </span>
                     <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Barang Individual
@@ -76,10 +92,10 @@
             <div class="flex items-start justify-between">
                 <div>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mb-2">
-                        Stok Consumable
+                        Barang habis pakai
                     </span>
                     <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Kuantitas Stok BHP
+                        Jumlah stok BHP
                     </p>
                     <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
                         {{ number_format($stockQuantity) }}
@@ -95,17 +111,17 @@
             <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-600"></div>
         </div>
 
-        {{-- Card 3: Lingkup Penempatan --}}
+        {{-- Card 3: Lokasi yang ditampilkan --}}
         <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
             <div class="flex items-start justify-between">
                 <div>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 mb-2">
-                        Cakupan Filter
+                        Cakupan rekap
                     </span>
                     <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Lingkup Penempatan
+                        Lokasi yang ditampilkan
                     </p>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mt-1.5 truncate max-w-[220px]">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mt-1.5 break-words">
                         @if ($selectedRoom)
                             {{ $selectedRoom->name }}
                         @elseif ($selectedCampus)
@@ -136,7 +152,7 @@
     <div class="flex items-start gap-3 p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/40 text-xs sm:text-sm text-blue-900 dark:text-blue-200">
         <x-filament::icon icon="heroicon-m-information-circle" class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
         <div class="leading-relaxed">
-            <span class="font-semibold">Catatan Data:</span> Homebase mengikuti penempatan riil barang saat ini. Kuantitas stok BHP merupakan total akumulasi jumlah stok dari berbagai satuan. Barang yang dihapus (<em>soft deleted</em>) atau masih dalam antrean pemeriksaan otomatis tidak termasuk dalam perhitungan rekapitulasi.
+            <span class="font-semibold">Catatan Data:</span> Homebase menunjukkan lokasi barang saat ini. BHP berarti barang habis pakai. Jumlah stok BHP menggabungkan berbagai satuan; lihat rincian barang untuk mengetahui satuannya. Barang yang sudah dihapus atau masih menunggu pemeriksaan tidak dihitung. Pencarian dan filter jenis hanya berlaku pada daftar barang, bukan angka ringkasan di atas.
         </div>
     </div>
 
@@ -163,7 +179,7 @@
                                 Barang Individual
                             </th>
                             <th scope="col" class="py-3.5 px-6 font-semibold text-right">
-                                Kuantitas Stok BHP
+                                Jumlah stok BHP
                             </th>
                             <th scope="col" class="py-3.5 px-6 font-semibold text-right">
                                 Total Akumulasi
@@ -212,7 +228,7 @@
                                     <x-filament::button
                                         :href="$drillDownUrl"
                                         tag="a"
-                                        size="xs"
+                                        size="sm"
                                         color="gray"
                                         icon="heroicon-m-arrow-right"
                                         icon-position="after"
@@ -294,36 +310,46 @@
             {{-- Search and Filter Toolbar --}}
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
                 <div class="w-full sm:max-w-xs">
+                    <label for="recap-search" class="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white">Cari barang di lokasi ini</label>
                     <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
                         <x-filament::input
+                            id="recap-search"
+                            aria-describedby="recap-search-help"
                             wire:model.live.debounce.300ms="search"
                             type="search"
-                            placeholder="Cari nama barang, barcode, brand..."
+                            placeholder="Nama barang, barcode, atau merek"
                         />
                     </x-filament::input.wrapper>
+                    <p id="recap-search-help" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Hasil diperbarui saat Anda mengetik.</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
                     {{-- Type Filter Buttons --}}
-                    <div class="inline-flex rounded-lg p-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/10 text-xs font-medium">
+                    <div role="group" aria-label="Filter jenis barang" class="inline-flex flex-wrap rounded-lg p-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/10 text-xs font-medium">
                         <button
                             type="button"
                             wire:click="setType('all')"
-                            class="px-2.5 py-1 rounded-md transition {{ $type === 'all' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
+                            aria-pressed="{{ $type === 'all' ? 'true' : 'false' }}"
+                            wire:loading.attr="disabled"
+                            class="min-h-11 px-3 py-2 rounded-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 {{ $type === 'all' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
                         >
                             Semua
                         </button>
                         <button
                             type="button"
                             wire:click="setType('asset')"
-                            class="px-2.5 py-1 rounded-md transition {{ $type === 'asset' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
+                            aria-pressed="{{ $type === 'asset' ? 'true' : 'false' }}"
+                            wire:loading.attr="disabled"
+                            class="min-h-11 px-3 py-2 rounded-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 {{ $type === 'asset' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
                         >
                             Barang Individual
                         </button>
                         <button
                             type="button"
                             wire:click="setType('supply')"
-                            class="px-2.5 py-1 rounded-md transition {{ $type === 'supply' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
+                            aria-pressed="{{ $type === 'supply' ? 'true' : 'false' }}"
+                            wire:loading.attr="disabled"
+                            class="min-h-11 px-3 py-2 rounded-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-50 {{ $type === 'supply' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
                         >
                             Stok BHP
                         </button>
@@ -332,17 +358,21 @@
                     @if (filled($search) || $type !== 'all')
                         <x-filament::button
                             wire:click="resetFilters"
-                            size="xs"
+                            size="sm"
                             color="gray"
                             icon="heroicon-m-x-mark"
                         >
-                            Reset
+                            Hapus filter
                         </x-filament::button>
                     @endif
                 </div>
             </div>
 
-            <div class="overflow-x-auto -mx-6 -mb-6">
+            <p role="status" aria-live="polite" class="mb-3 text-sm text-gray-600 dark:text-gray-300">
+                <span wire:loading wire:target="search,setType,resetFilters,gotoPage,nextPage,previousPage">Memperbarui daftar barang…</span>
+                <span wire:loading.remove wire:target="search,setType,resetFilters,gotoPage,nextPage,previousPage">{{ number_format($items->total()) }} barang sesuai pencarian dan jenis yang dipilih.</span>
+            </p>
+            <div role="region" aria-label="Rincian barang, geser untuk melihat semua kolom" tabindex="0" class="overflow-x-auto -mx-6 -mb-6 focus-visible:outline-2 focus-visible:outline-primary-600">
                 <table class="w-full text-sm text-left">
                     <thead class="text-xs uppercase bg-gray-50/90 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-white/10">
                         <tr>
@@ -439,11 +469,11 @@
                                 <td colspan="6" class="py-10 px-6 text-center text-gray-500 dark:text-gray-400">
                                     <div class="flex flex-col items-center justify-center">
                                         <x-filament::icon icon="heroicon-o-archive-box-x-mark" class="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-                                        <p class="font-medium text-gray-700 dark:text-gray-300">Belum ada barang pada penempatan ini.</p>
+                                        <p class="font-medium text-gray-700 dark:text-gray-300">{{ filled($search) || $type !== 'all' ? 'Tidak ada barang yang cocok.' : 'Belum ada barang di lokasi ini.' }}</p>
                                         @if (filled($search) || $type !== 'all')
-                                            <p class="text-xs text-gray-400 mt-1">Tidak ada barang yang cocok dengan kriteria pencarian.</p>
+                                            <p class="text-xs text-gray-400 mt-1">Coba kata kunci lain atau hapus filter untuk melihat semua barang di lokasi ini.</p>
                                             <div class="mt-3">
-                                                <x-filament::button wire:click="resetFilters" size="xs" color="gray">
+                                                <x-filament::button wire:click="resetFilters" size="sm" color="gray">
                                                     Hapus Filter Pencarian
                                                 </x-filament::button>
                                             </div>
