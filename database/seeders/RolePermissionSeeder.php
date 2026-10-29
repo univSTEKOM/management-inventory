@@ -44,6 +44,17 @@ class RolePermissionSeeder extends Seeder
             'permissions.view', 'permissions.manage',
             // Panel Access
             'panel.admin', 'panel.inventory',
+            // Dashboard & Widget Visibility
+            'dashboard.view',
+            'dashboard.widget.total_assets',
+            'dashboard.widget.total_categories',
+            'dashboard.widget.total_locations',
+            'dashboard.widget.total_employees',
+            'dashboard.widget.pending_mutations',
+            'dashboard.widget.stock_opname_active',
+            'dashboard.widget.asset_status_chart',
+            'dashboard.widget.latest_movements',
+            'dashboard.widget.asset_acquisition_value',
         ];
 
         foreach ($permissions as $permission) {
@@ -68,6 +79,16 @@ class RolePermissionSeeder extends Seeder
                 'asset_qr.view', 'asset_qr.generate', 'asset_scanner.use',
                 'reports.view', 'reports.export',
                 'audit.view',
+                // Dashboard permissions
+                'dashboard.view',
+                'dashboard.widget.total_assets',
+                'dashboard.widget.total_categories',
+                'dashboard.widget.total_locations',
+                'dashboard.widget.total_employees',
+                'dashboard.widget.pending_mutations',
+                'dashboard.widget.stock_opname_active',
+                'dashboard.widget.asset_status_chart',
+                'dashboard.widget.latest_movements',
             ],
 
             'Finance' => [
@@ -77,6 +98,10 @@ class RolePermissionSeeder extends Seeder
                 'intake.complete',
                 'financial.view', 'financial.export',
                 'reports.view', 'reports.export',
+                // Dashboard permissions (Finance melihat finansial)
+                'dashboard.view',
+                'dashboard.widget.total_assets',
+                'dashboard.widget.asset_acquisition_value',
             ],
 
             'Approver' => [
@@ -85,6 +110,10 @@ class RolePermissionSeeder extends Seeder
                 'movements.view', 'movements.approve', 'movements.reject', 'movements.complete',
                 'status.view', 'status.approve',
                 'reports.view',
+                // Dashboard permissions
+                'dashboard.view',
+                'dashboard.widget.total_assets',
+                'dashboard.widget.pending_mutations',
             ],
         ];
 

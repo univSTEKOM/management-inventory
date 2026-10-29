@@ -48,6 +48,11 @@ abstract class BaseCategoryAssetResource extends Resource
         return false;
     }
 
+    public static function canAccess(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('assets.view');
+    }
+
     /**
      * URL halaman edit untuk baris di tabel.
      * Override di subclass jika memiliki halaman edit sendiri.

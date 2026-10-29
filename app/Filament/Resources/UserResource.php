@@ -101,6 +101,95 @@ class UserResource extends Resource
         return 'permission_group_'.$group;
     }
 
+    public static function friendlyPermissionLabel(string $name): string
+    {
+        $labels = [
+            // Dashboard
+            'dashboard.view' => 'Melihat Halaman Dashboard',
+            'dashboard.widget.total_assets' => 'Card Total Barang / Aset',
+            'dashboard.widget.total_categories' => 'Card Total Kategori',
+            'dashboard.widget.total_locations' => 'Card Total Lokasi',
+            'dashboard.widget.total_employees' => 'Card Total Karyawan',
+            'dashboard.widget.pending_mutations' => 'Card Mutasi Pending',
+            'dashboard.widget.stock_opname_active' => 'Card Stock Opname Berjalan',
+            'dashboard.widget.asset_status_chart' => 'Grafik Status Barang',
+            'dashboard.widget.latest_movements' => 'Tabel Mutasi Terbaru',
+            'dashboard.widget.asset_acquisition_value' => 'Nilai Total Perolehan Aset',
+            // Assets
+            'assets.view' => 'Melihat Daftar Barang & Inventaris',
+            'assets.create' => 'Menambah Barang Baru',
+            'assets.update' => 'Mengubah Data Barang',
+            'assets.delete' => 'Menghapus Barang',
+            // Supplies
+            'supplies.stock_in' => 'Stok Masuk Barang Habis Pakai',
+            'supplies.update' => 'Mengubah Data Barang Habis Pakai',
+            // Intake
+            'intake.complete' => 'Melengkapi Data Barang Masuk (Finance)',
+            // Master Data
+            'categories.view' => 'Melihat Master Kategori',
+            'categories.create' => 'Menambah Master Kategori',
+            'categories.update' => 'Mengubah Master Kategori',
+            'categories.delete' => 'Menghapus Master Kategori',
+            'campuses.view' => 'Melihat Master Kampus / Gedung',
+            'campuses.create' => 'Menambah Master Kampus / Gedung',
+            'campuses.update' => 'Mengubah Master Kampus / Gedung',
+            'campuses.delete' => 'Menghapus Master Kampus / Gedung',
+            'locations.view' => 'Melihat Master Ruangan / Lokasi',
+            'locations.create' => 'Menambah Master Ruangan / Lokasi',
+            'locations.update' => 'Mengubah Master Ruangan / Lokasi',
+            'locations.delete' => 'Menghapus Master Ruangan / Lokasi',
+            'employees.view' => 'Melihat Master Karyawan / PIC',
+            'employees.create' => 'Menambah Master Karyawan / PIC',
+            'employees.update' => 'Mengubah Master Karyawan / PIC',
+            'employees.delete' => 'Menghapus Master Karyawan / PIC',
+            // Movements
+            'movements.view' => 'Melihat Riwayat Mutasi',
+            'movements.create' => 'Mengajukan Mutasi Barang',
+            'movements.approve' => 'Menyetujui Mutasi Barang',
+            'movements.reject' => 'Menolak Mutasi Barang',
+            'movements.complete' => 'Menyelesaikan Mutasi Barang',
+            // Status
+            'status.view' => 'Melihat Status & Kondisi',
+            'status.update' => 'Mengubah Status / Kondisi',
+            'status.approve' => 'Menyetujui Perubahan Status',
+            // Stock Opname
+            'stock_opname.view' => 'Melihat Sesi Stock Opname',
+            'stock_opname.create' => 'Membuat Sesi Stock Opname',
+            'stock_opname.update' => 'Memperbarui Item Stock Opname',
+            'stock_opname.complete' => 'Menyelesaikan Stock Opname',
+            // Barcode & QR
+            'asset_qr.view' => 'Melihat Barcode / QR Code',
+            'asset_qr.generate' => 'Mencetak Barcode & Checklist',
+            'asset_scanner.use' => 'Menggunakan Fitur Scanner',
+            // Financial
+            'financial.view' => 'Melihat Harga Beli & Informasi Finansial',
+            'financial.update' => 'Mengubah Data Keuangan / Nilai Perolehan',
+            'financial.export' => 'Ekspor Data Finansial',
+            // Reports
+            'reports.view' => 'Melihat Halaman Laporan',
+            'reports.export' => 'Ekspor Laporan (Excel/PDF)',
+            // Audit
+            'audit.view' => 'Melihat Log Audit Aktivitas',
+            'audit.export' => 'Ekspor Riwayat Audit',
+            // User Administration
+            'users.view' => 'Melihat Daftar Pengguna',
+            'users.create' => 'Menambah Pengguna Baru',
+            'users.update' => 'Mengubah Informasi Pengguna',
+            'users.delete' => 'Menghapus Pengguna',
+            'roles.view' => 'Melihat Daftar Role',
+            'roles.create' => 'Menambah Role Baru',
+            'roles.update' => 'Mengubah Role & Permission Role',
+            'roles.delete' => 'Menghapus Role',
+            'permissions.view' => 'Melihat Daftar Permission',
+            'permissions.manage' => 'Mengelola Permission',
+            // Panels
+            'panel.admin' => 'Akses Panel Administrasi (Admin)',
+            'panel.inventory' => 'Akses Panel Inventaris (Inventory)',
+        ];
+
+        return $labels[$name] ?? Str::headline(str_replace(['.', '_'], ' ', $name));
+    }
+
     /**
      * Map permission_id => nama-nama role user yang sudah memberikan permission tsb.
      */
@@ -190,7 +279,9 @@ class UserResource extends Resource
 
                 Tables\Columns\TextColumn::make('permissions_count')
                     ->counts('permissions')
-                    ->label('Permission Langsung'),
+                    ->label('Override Akun')
+                    ->badge()
+                    ->color(fn (int $state): string => $state > 0 ? 'warning' : 'gray'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat Pada')

@@ -4,6 +4,7 @@ namespace App\Filament\Inventory\Widgets;
 
 use App\Models\Asset;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
 
 class AssetStatusChart extends ChartWidget
 {
@@ -12,6 +13,11 @@ class AssetStatusChart extends ChartWidget
     protected int | string | array $columnSpan = 2;
 
     protected static ?int $sort = 1;
+
+    public static function canView(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('dashboard.widget.asset_status_chart');
+    }
 
     protected function getMaxHeight(): ?string
     {

@@ -10,6 +10,7 @@ use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class MutationResource extends Resource
 {
@@ -19,6 +20,11 @@ class MutationResource extends Resource
     public static function getNavigationGroup(): string { return 'Asset Management'; }
     public static function getModelLabel(): string { return 'Mutasi Barang'; }
     public static function getPluralModelLabel(): string { return 'Mutasi Barang'; }
+
+    public static function canAccess(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('movements.view');
+    }
 
     public static function table(Table $table): Table
     {

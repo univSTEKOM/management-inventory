@@ -53,6 +53,11 @@ class InventoryBalanceResource extends Resource
         return 'Barang Habis Pakai';
     }
 
+    public static function canAccess(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('assets.view');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([]);

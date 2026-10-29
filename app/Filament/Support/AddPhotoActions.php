@@ -231,9 +231,12 @@ class AddPhotoActions
 
     protected static function photoUpload(int $maxFiles, bool $mentionSupplyLimit = false): FileUpload
     {
+        $maxSizeKB = 10240; // 10MB
+        $maxSizeMB = 10;
+
         $helper = $maxFiles > 1
-            ? "Maks {$maxFiles} foto, urutan pertama jadi foto utama. Format: JPG, PNG, WebP. Maks 5MB per foto."
-            : 'Satu foto. Format: JPG, PNG, WebP. Maks 5MB.';
+            ? "Maks {$maxFiles} foto, urutan pertama jadi foto utama. Format: JPG, PNG, WebP. Maks {$maxSizeMB}MB per foto."
+            : "Satu foto. Format: JPG, PNG, WebP. Maks {$maxSizeMB}MB.";
 
         if ($mentionSupplyLimit) {
             $helper .= ' Stok BHP hanya menyimpan foto pertama.';
@@ -242,6 +245,14 @@ class AddPhotoActions
         // Validasi & penyimpanan sama dengan form AssetResource (disk s3_thumb, folder asset-photos, maks 3).
         return FileUpload::make('photo')
             ->label('Foto')
+            ->validationAttribute('Foto')
+            ->validationMessages([
+                'uploaded' => 'File foto gagal diunggah. Kemungkinan penyebab: ukuran file melebihi batas upload server (PHP/Nginx), format file bukan JPG/PNG/WebP, atau koneksi internet terputus.',
+                'max' => "Ukuran file foto terlalu besar. Maksimal {$maxSizeMB}MB per file.",
+                'mimes' => 'Format file tidak didukung. Harap gunakan format gambar JPG, PNG, atau WebP.',
+                'accepted_file_types' => 'Format file tidak didukung. Harap pilih gambar dengan format JPG, PNG, atau WebP.',
+                'required' => 'Silakan pilih atau ambil foto terlebih dahulu.',
+            ])
             ->multiple()
             ->maxFiles($maxFiles)
             ->reorderable()
@@ -251,7 +262,7 @@ class AddPhotoActions
             ->imageResizeTargetWidth('2000')
             ->imageResizeTargetHeight('2000')
             ->imagePreviewHeight('200')
-            ->maxSize(5120)
+            ->maxSize($maxSizeKB)
             ->disk(ItemPhotoService::DISK)
             ->directory(ItemPhotoService::DIRECTORY)
             ->acceptedFileTypes(ItemPhotoService::ACCEPTED_MIME_TYPES)
