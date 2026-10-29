@@ -74,8 +74,8 @@ class ItemRecapitulationTest extends TestCase
 
         $detail = $this->page($campus, $room)->data();
         $this->assertEqualsCanonicalizing(
-            ['asset_'.$asset->id, 'supply_'.$balance->id],
-            $detail['items']->pluck('id')->all(),
+            [$asset->name, $balance->name],
+            $detail['items']->pluck('item_name')->all(),
         );
         $this->assertEquals(0, $this->page($campus, $emptyRoom->id)->data()['items']->total());
 
@@ -130,13 +130,68 @@ class ItemRecapitulationTest extends TestCase
         $pageSearch->search = 'Dell';
         $searchData = $pageSearch->data();
         $this->assertEquals(1, $searchData['items']->total());
-        $this->assertEquals('asset_'.$asset->id, $searchData['items']->first()->id);
+        $this->assertEquals($asset->name, $searchData['items']->first()->item_name);
 
         $pageType = $this->page($campus, $room);
         $pageType->type = 'supply';
         $typeData = $pageType->data();
         $this->assertEquals(1, $typeData['items']->total());
-        $this->assertEquals('supply_'.$balance->id, $typeData['items']->first()->id);
+        $this->assertEquals($balance->name, $typeData['items']->first()->item_name);
+    }
+    public function test_names_are_grouped_before_pagination_and_drill_down_by_brand(): void
+    {
+        $this->authorizeReports();
+        $aset = \App\Models\Classification::factory()->create(['name' => 'Aset', 'slug' => 'aset']);
+        $inventaris = \App\Models\Classification::factory()->create(['name' => 'Inventaris', 'slug' => 'inventaris']);
+        $first = Asset::factory()->create(['name' => 'AC', 'brand' => 'Midea', 'unit' => 'Unit', 'classification_id' => $aset->id]);
+        $placement = ['campus_id' => $first->campus_id, 'location_id' => $first->location_id];
+        Asset::factory()->count(2)->create($placement + ['name' => 'AC', 'brand' => 'Midea', 'unit' => 'Unit', 'classification_id' => $aset->id]);
+        Asset::factory()->create($placement + ['name' => 'AC', 'brand' => 'Daikin', 'unit' => 'Unit', 'classification_id' => $inventaris->id]);
+        Asset::factory()->create(['name' => 'AC', 'brand' => 'Midea', 'classification_id' => $aset->id]);
+        $otherRoom = Location::factory()->create(['campus_id' => $first->campus_id]);
+        Asset::factory()->create(['campus_id' => $first->campus_id, 'location_id' => $otherRoom->id, 'name' => 'AC', 'classification_id' => $aset->id]);
+
+        $page = $this->page($first->campus_id, $first->location_id);
+        $data = $page->data();
+        $this->assertEquals(3, $data['assetCount']);
+        $this->assertEquals(1, $data['inventoryCount']);
+        $homeTotals = $this->page($first->campus_id)->data()['totals']->get($first->location_id);
+        $this->assertEquals(3, $homeTotals->asset_count);
+        $this->assertEquals(1, $homeTotals->inventory_count);
+        $this->assertEquals(1, $data['items']->total());
+        $this->assertEquals('AC', $data['items']->first()->item_name);
+        $this->assertEquals(4, $data['items']->first()->quantity);
+        $this->assertEquals(5, $this->page($first->campus_id)->data()['items']->first()->quantity);
+
+        $page->item = 'AC';
+        $brands = $page->data()['items']->getCollection()->keyBy('brand');
+        $this->assertCount(2, $brands);
+        $this->assertEquals(3, $brands['Midea']->quantity);
+        $this->assertEquals(1, $brands['Daikin']->quantity);
+        $page->type = 'inventory';
+        $this->assertEquals(1, $page->data()['items']->first()->quantity);
+        $page->type = 'asset';
+        $this->assertEquals(3, $page->data()['items']->first()->quantity);
+        $page->item = "AC' OR 1=1 --";
+        $this->assertEquals(0, $page->data()['items']->total());
+    }
+
+    public function test_duplicate_names_do_not_consume_pagination_slots_and_missing_brands_are_combined(): void
+    {
+        $this->authorizeReports();
+        $first = Asset::factory()->create(['name' => 'AC', 'brand' => null, 'unit' => 'Unit']);
+        $placement = ['campus_id' => $first->campus_id, 'location_id' => $first->location_id];
+        Asset::factory()->count(26)->create($placement + ['name' => 'AC', 'brand' => '', 'unit' => 'Unit']);
+        Asset::factory()->create($placement + ['name' => 'AC', 'brand' => ' ', 'unit' => 'Paket']);
+        $page = $this->page($first->campus_id, $first->location_id);
+        $this->assertEquals(1, $page->data()['items']->total());
+        $this->assertEquals(28, $page->data()['items']->first()->quantity);
+        $this->assertEquals('Beragam satuan', $page->data()['items']->first()->unit_name);
+        $page->item = 'AC';
+        $this->assertEquals(1, $page->data()['items']->total());
+        $this->assertEquals(28, $page->data()['items']->first()->quantity);
+        $page->search = 'Tidak ada';
+        $this->assertEquals(0, $page->data()['items']->total());
     }
 }
 
