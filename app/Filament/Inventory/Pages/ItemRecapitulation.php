@@ -29,8 +29,12 @@ class ItemRecapitulation extends Page
     #[Url]
     public string $type = 'all';
 
+    #[Url]
+    public ?string $item = null;
+
     public function updatingSearch(): void
     {
+        $this->item = null;
         $this->resetPage();
     }
 
@@ -49,6 +53,7 @@ class ItemRecapitulation extends Page
     {
         $this->search = '';
         $this->type = 'all';
+        $this->item = null;
         $this->resetPage();
     }
 
@@ -86,9 +91,13 @@ class ItemRecapitulation extends Page
             $query->where('location_id', $room->id);
         }
 
+        $countSql = "SUM(CASE WHEN row_type = 'asset' AND classification_slug = 'aset' THEN quantity ELSE 0 END) as asset_count,
+            SUM(CASE WHEN row_type = 'asset' AND classification_slug = 'inventaris' THEN quantity ELSE 0 END) as inventory_count,
+            SUM(CASE WHEN row_type = 'supply' THEN quantity ELSE 0 END) as stock_quantity";
+
         $groupColumn = $campus ? 'location_id' : 'campus_id';
         $totals = (clone $query)
-            ->selectRaw("{$groupColumn}, SUM(CASE WHEN row_type = 'asset' THEN quantity ELSE 0 END) as individual_count, SUM(CASE WHEN row_type = 'supply' THEN quantity ELSE 0 END) as stock_quantity")
+            ->selectRaw("{$groupColumn}, {$countSql}, SUM(CASE WHEN row_type = 'asset' THEN quantity ELSE 0 END) as individual_count")
             ->groupBy($groupColumn)
             ->get()
             ->keyBy($groupColumn);
@@ -105,9 +114,24 @@ class ItemRecapitulation extends Page
             });
         }
 
-        if (filled($this->type) && $this->type !== 'all') {
-            $itemsQuery->where('row_type', $this->type);
+        if (in_array($this->type, ['asset', 'inventory'], true)) {
+            $itemsQuery->where('row_type', 'asset')
+                ->where('classification_slug', $this->type === 'asset' ? 'aset' : 'inventaris');
+        } elseif ($this->type === 'supply') {
+            $itemsQuery->where('row_type', 'supply');
         }
+
+        // Aggregate in SQL before pagination: one row per name, then per brand.
+        if ($this->item !== null) {
+            $itemsQuery->where('item_name', $this->item);
+        }
+        $dimension = $this->item === null ? 'item_name' : "COALESCE(NULLIF(TRIM(brand), ''), '')";
+        $dimensionAlias = $this->item === null ? 'item_name' : 'brand';
+        $itemsQuery->selectRaw("{$dimension} as {$dimensionAlias}, SUM(quantity) as quantity, {$countSql},
+            CASE WHEN COUNT(DISTINCT COALESCE(NULLIF(TRIM(unit_name), ''), '—')) = 1
+                THEN MIN(COALESCE(NULLIF(TRIM(unit_name), ''), '—')) ELSE 'Beragam satuan' END as unit_name")
+            ->groupByRaw($dimension)->orderBy($dimensionAlias);
+        $summary = (clone $query)->selectRaw($countSql)->first();
 
         return [
             'selectedCampus' => $campus,
@@ -116,10 +140,13 @@ class ItemRecapitulation extends Page
                 ? $campus->locations()->orderBy('name')->get()
                 : Campus::orderBy('name')->get()),
             'totals' => $totals,
+            'assetCount' => $summary->asset_count ?? 0,
+            'inventoryCount' => $summary->inventory_count ?? 0,
+            'selectedItem' => $this->item,
             'individualCount' => (clone $query)->where('row_type', 'asset')->sum('quantity'),
             'stockQuantity' => (clone $query)->where('row_type', 'supply')->sum('quantity'),
             'items' => $campus
-                ? (clone $itemsQuery)->orderBy('item_name')->orderBy('id')->paginate(25)
+                ? $itemsQuery->paginate(25)
                 : null,
             'search' => $this->search,
             'type' => $this->type,

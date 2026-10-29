@@ -45,91 +45,14 @@
         @endif
     </div>
 
-    {{-- Ringkasan Barang: Executive KPI Cards --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {{-- Card 1: Barang Individual --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
-            <div class="flex items-start justify-between">
-                <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 mb-2">
-                        Unit Fisik Unik
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Barang Individual
-                    </p>
-                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
-                        {{ number_format($individualCount) }}
-                    </h3>
-                </div>
-                <div class="rounded-xl p-3 bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
-                    <x-filament::icon icon="heroicon-o-cube" class="w-6 h-6" />
-                </div>
+        @foreach (['Aset' => $assetCount, 'Inventaris' => $inventoryCount, 'Stok BHP' => $stockQuantity] as $label => $count)
+            <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ $label }}</p>
+                <h3 class="text-3xl font-bold text-gray-900 dark:text-white mt-2">{{ number_format($count) }}</h3>
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ $label === 'Stok BHP' ? 'Kuantitas stok; dapat mencakup beberapa satuan.' : 'Unit dengan klasifikasi '.$label.' di lokasi ini.' }}</p>
             </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Aset tetap & inventaris ber-barcode terdata pada cakupan ini.
-            </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
-        </div>
-
-        {{-- Card 2: Stok BHP --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
-            <div class="flex items-start justify-between">
-                <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mb-2">
-                        Stok Consumable
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Kuantitas Stok BHP
-                    </p>
-                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
-                        {{ number_format($stockQuantity) }}
-                    </h3>
-                </div>
-                <div class="rounded-xl p-3 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
-                    <x-filament::icon icon="heroicon-o-circle-stack" class="w-6 h-6" />
-                </div>
-            </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Akumulasi seluruh jumlah kuantitas stok barang habis pakai.
-            </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-600"></div>
-        </div>
-
-        {{-- Card 3: Lingkup Penempatan --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
-            <div class="flex items-start justify-between">
-                <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 mb-2">
-                        Cakupan Filter
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Lingkup Penempatan
-                    </p>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mt-1.5 truncate max-w-[220px]">
-                        @if ($selectedRoom)
-                            {{ $selectedRoom->name }}
-                        @elseif ($selectedCampus)
-                            {{ $selectedCampus->name }}
-                        @else
-                            Seluruh Homebase
-                        @endif
-                    </h3>
-                </div>
-                <div class="rounded-xl p-3 bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50">
-                    <x-filament::icon icon="heroicon-o-map-pin" class="w-6 h-6" />
-                </div>
-            </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                @if ($selectedRoom)
-                    Homebase: <strong class="text-gray-700 dark:text-gray-300">{{ $selectedCampus->name }}</strong>
-                @elseif ($selectedCampus)
-                    <strong class="text-gray-700 dark:text-gray-300">{{ $groups->count() }}</strong> Ruangan terdaftar di homebase ini
-                @else
-                    <strong class="text-gray-700 dark:text-gray-300">{{ $groups->count() }}</strong> Homebase terdaftar di sistem
-                @endif
-            </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 to-orange-600"></div>
-        </div>
+        @endforeach
     </div>
 
     {{-- Information Callout --}}
@@ -160,13 +83,13 @@
                                 {{ $selectedCampus ? 'Ruangan' : 'Homebase' }}
                             </th>
                             <th scope="col" class="py-3.5 px-6 font-semibold text-right">
-                                Barang Individual
+                                Aset
+                            </th>
+                            <th scope="col" class="py-3.5 px-6 font-semibold text-right">
+                                Inventaris
                             </th>
                             <th scope="col" class="py-3.5 px-6 font-semibold text-right">
                                 Kuantitas Stok BHP
-                            </th>
-                            <th scope="col" class="py-3.5 px-6 font-semibold text-right">
-                                Total Akumulasi
                             </th>
                             <th scope="col" class="py-3.5 px-6 font-semibold text-center w-36">
                                 Aksi
@@ -176,9 +99,9 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                         @forelse ($groups as $group)
                             @php
-                                $groupIndividual = $totals->get($group->id)?->individual_count ?? 0;
+                                $groupAsset = $totals->get($group->id)?->asset_count ?? 0;
                                 $groupStock = $totals->get($group->id)?->stock_quantity ?? 0;
-                                $groupTotal = $groupIndividual + $groupStock;
+                                $groupInventory = $totals->get($group->id)?->inventory_count ?? 0;
                                 $drillDownUrl = \App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(
                                     $selectedCampus
                                         ? ['campus' => $selectedCampus->id, 'room' => $group->id]
@@ -196,17 +119,17 @@
                                     </a>
                                 </th>
                                 <td class="py-3.5 px-6 text-right font-medium text-gray-900 dark:text-white tabular-nums">
-                                    <span class="inline-flex items-center justify-end px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $groupIndividual > 0 ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-400 dark:text-gray-500' }}">
-                                        {{ number_format($groupIndividual) }}
+                                    <span class="inline-flex items-center justify-end px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $groupAsset > 0 ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-400 dark:text-gray-500' }}">
+                                        {{ number_format($groupAsset) }}
                                     </span>
+                                </td>
+                                <td class="py-3.5 px-6 text-right font-bold text-gray-900 dark:text-white tabular-nums">
+                                    {{ number_format($groupInventory) }}
                                 </td>
                                 <td class="py-3.5 px-6 text-right font-medium text-gray-900 dark:text-white tabular-nums">
                                     <span class="inline-flex items-center justify-end px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $groupStock > 0 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'text-gray-400 dark:text-gray-500' }}">
                                         {{ number_format($groupStock) }}
                                     </span>
-                                </td>
-                                <td class="py-3.5 px-6 text-right font-bold text-gray-900 dark:text-white tabular-nums">
-                                    {{ number_format($groupTotal) }}
                                 </td>
                                 <td class="py-3.5 px-6 text-center">
                                     <x-filament::button
@@ -235,7 +158,7 @@
                         {{-- Ungrouped row (if any) --}}
                         @php
                             $ungrouped = $totals->except($groups->modelKeys());
-                            $ungroupedIndividual = $ungrouped->sum('individual_count');
+                            $ungroupedAsset = $ungrouped->sum('asset_count');
                             $ungroupedStock = $ungrouped->sum('stock_quantity');
                         @endphp
                         @if ($ungrouped->isNotEmpty())
@@ -247,13 +170,13 @@
                                     </div>
                                 </th>
                                 <td class="py-3.5 px-6 text-right font-medium text-amber-900 dark:text-amber-200 tabular-nums">
-                                    {{ number_format($ungroupedIndividual) }}
+                                    {{ number_format($ungroupedAsset) }}
+                                </td>
+                                <td class="py-3.5 px-6 text-right font-bold text-amber-900 dark:text-amber-200 tabular-nums">
+                                    {{ number_format($ungrouped->sum('inventory_count')) }}
                                 </td>
                                 <td class="py-3.5 px-6 text-right font-medium text-amber-900 dark:text-amber-200 tabular-nums">
                                     {{ number_format($ungroupedStock) }}
-                                </td>
-                                <td class="py-3.5 px-6 text-right font-bold text-amber-900 dark:text-amber-200 tabular-nums">
-                                    {{ number_format($ungroupedIndividual + $ungroupedStock) }}
                                 </td>
                                 <td class="py-3.5 px-6 text-center text-gray-400">—</td>
                             </tr>
@@ -261,15 +184,15 @@
                     </tbody>
                     <tfoot class="bg-gray-50/90 dark:bg-gray-800/80 font-bold border-t-2 border-gray-200 dark:border-white/10 text-gray-900 dark:text-white">
                         <tr>
-                            <th scope="row" class="py-3.5 px-6 text-left">Total Akumulasi</th>
+                            <th scope="row" class="py-3.5 px-6 text-left">Total</th>
                             <td class="py-3.5 px-6 text-right tabular-nums text-blue-700 dark:text-blue-300">
-                                {{ number_format($individualCount) }}
+                                {{ number_format($assetCount) }}
+                            </td>
+                            <td class="py-3.5 px-6 text-right tabular-nums text-gray-900 dark:text-white">
+                                {{ number_format($inventoryCount) }}
                             </td>
                             <td class="py-3.5 px-6 text-right tabular-nums text-emerald-700 dark:text-emerald-300">
                                 {{ number_format($stockQuantity) }}
-                            </td>
-                            <td class="py-3.5 px-6 text-right tabular-nums text-gray-900 dark:text-white">
-                                {{ number_format($individualCount + $stockQuantity) }}
                             </td>
                             <td class="py-3.5 px-6"></td>
                         </tr>
@@ -279,186 +202,76 @@
         </x-filament::section>
     @endunless
 
-    {{-- Detail Items Table (when campus or room is selected) --}}
     @if ($items)
         <x-filament::section
-            :heading="$selectedRoom ? 'Rincian Barang di Ruangan ' . $selectedRoom->name : 'Daftar Seluruh Barang di Homebase ' . $selectedCampus->name"
-            :description="$selectedRoom ? 'Menampilkan seluruh aset individual dan stok BHP yang teralokasi pada ruangan ini.' : 'Menampilkan seluruh barang dan persediaan BHP yang berada di lingkungan kampus ini.'"
+            :heading="$selectedItem !== null ? 'Rekap Merek — '.$selectedItem : 'Rekap per Nama Barang'"
+            :description="$selectedItem !== null ? 'Jumlah per merek untuk barang dan lokasi yang dipilih.' : 'Nama barang yang sama digabung. Klik nama barang untuk melihat total per merek.'"
         >
-            <x-slot name="headerEnd">
-                <x-filament::badge color="primary" size="sm">
-                    {{ number_format($items->total()) }} Item Ditemukan
-                </x-filament::badge>
-            </x-slot>
-
-            {{-- Search and Filter Toolbar --}}
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                @if ($selectedItem !== null)
+                    <x-filament::button tag="a" color="gray" icon="heroicon-m-arrow-left"
+                        :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(['campus' => $selectedCampus->id, 'room' => $selectedRoom?->id, 'search' => $search, 'type' => $type])">
+                        Kembali ke nama barang
+                    </x-filament::button>
+                @endif
                 <div class="w-full sm:max-w-xs">
+                    <label for="recap-search" class="sr-only">Cari barang</label>
                     <x-filament::input.wrapper prefix-icon="heroicon-m-magnifying-glass">
-                        <x-filament::input
-                            wire:model.live.debounce.300ms="search"
-                            type="search"
-                            placeholder="Cari nama barang, barcode, brand..."
-                        />
+                        <x-filament::input id="recap-search" wire:model.live.debounce.300ms="search" type="search" placeholder="Cari nama, merek, atau barcode..." />
                     </x-filament::input.wrapper>
                 </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    {{-- Type Filter Buttons --}}
-                    <div class="inline-flex rounded-lg p-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/10 text-xs font-medium">
-                        <button
-                            type="button"
-                            wire:click="setType('all')"
-                            class="px-2.5 py-1 rounded-md transition {{ $type === 'all' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
-                        >
-                            Semua
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="setType('asset')"
-                            class="px-2.5 py-1 rounded-md transition {{ $type === 'asset' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
-                        >
-                            Barang Individual
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="setType('supply')"
-                            class="px-2.5 py-1 rounded-md transition {{ $type === 'supply' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
-                        >
-                            Stok BHP
-                        </button>
-                    </div>
-
+                <div class="flex flex-wrap gap-2" aria-label="Filter jenis barang">
+                    @foreach (['all' => 'Semua', 'asset' => 'Aset', 'inventory' => 'Inventaris', 'supply' => 'Stok BHP'] as $value => $label)
+                        <x-filament::button wire:click="setType('{{ $value }}')" :color="$type === $value ? 'primary' : 'gray'" size="sm" :aria-pressed="$type === $value ? 'true' : 'false'">{{ $label }}</x-filament::button>
+                    @endforeach
                     @if (filled($search) || $type !== 'all')
-                        <x-filament::button
-                            wire:click="resetFilters"
-                            size="xs"
-                            color="gray"
-                            icon="heroicon-m-x-mark"
-                        >
-                            Reset
-                        </x-filament::button>
+                        <x-filament::button wire:click="resetFilters" color="gray" size="sm">Reset filter</x-filament::button>
                     @endif
                 </div>
             </div>
-
-            <div class="overflow-x-auto -mx-6 -mb-6">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                {{ number_format($items->total()) }} {{ $selectedItem !== null ? 'merek' : 'nama barang' }}
+                · {{ $selectedRoom?->name ?? $selectedCampus->name }}
+                @if (filled($search)) · Jumlah mengikuti hasil pencarian. @endif
+            </p>
+            <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
-                    <thead class="text-xs uppercase bg-gray-50/90 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-white/10">
+                    <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                         <tr>
-                            <th scope="col" class="py-3 px-6 font-semibold">Barang & Spesifikasi</th>
-                            <th scope="col" class="py-3 px-6 font-semibold">Jenis / Tipe</th>
-                            <th scope="col" class="py-3 px-6 font-semibold">Barcode / SKU</th>
-                            <th scope="col" class="py-3 px-6 font-semibold">Ruangan</th>
-                            <th scope="col" class="py-3 px-6 font-semibold text-right">Jumlah & Satuan</th>
-                            <th scope="col" class="py-3 px-6 font-semibold text-center">Kondisi</th>
+                            <th scope="col" class="p-4">{{ $selectedItem !== null ? 'Merek' : 'Nama barang' }}</th>
+                            <th scope="col" class="p-4 text-right">Aset</th>
+                            <th scope="col" class="p-4 text-right">Inventaris</th>
+                            <th scope="col" class="p-4 text-right">Stok BHP</th>
+                            <th scope="col" class="p-4 text-right">Jumlah total</th>
+                            <th scope="col" class="p-4">Satuan</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
-                        @forelse ($items as $item)
-                            <tr class="hover:bg-gray-50/70 dark:hover:bg-white/5 transition-colors">
-                                <td class="py-3.5 px-6">
-                                    <div class="font-medium text-gray-900 dark:text-white">
-                                        {{ $item->item_name }}
-                                    </div>
-                                    @if ($item->brand || $item->category_name)
-                                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5">
-                                            @if ($item->brand)
-                                                <span>{{ $item->brand }}</span>
-                                            @endif
-                                            @if ($item->brand && $item->category_name)
-                                                <span>•</span>
-                                            @endif
-                                            @if ($item->category_name)
-                                                <span>{{ $item->category_name }}</span>
-                                            @endif
-                                        </div>
-                                    @endif
-                                </td>
-                                <td class="py-3.5 px-6">
-                                    @if ($item->row_type === 'asset')
-                                        <x-filament::badge color="info" size="sm" icon="heroicon-m-cube">
-                                            {{ $item->classification_name ?: 'Aset Individual' }}
-                                        </x-filament::badge>
+                    <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+                        @forelse ($items as $entry)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-white/5">
+                                <th scope="row" class="p-4 font-semibold">
+                                    @if ($selectedItem === null)
+                                        <x-filament::link :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(['campus' => $selectedCampus->id, 'room' => $selectedRoom?->id, 'item' => $entry->item_name, 'search' => $search, 'type' => $type])">
+                                            {{ $entry->item_name }} <span aria-hidden="true">→</span>
+                                        </x-filament::link>
                                     @else
-                                        <x-filament::badge color="success" size="sm" icon="heroicon-m-circle-stack">
-                                            {{ $item->classification_name ?: 'Stok BHP' }}
-                                        </x-filament::badge>
+                                        {{ filled($entry->brand) ? $entry->brand : 'Tanpa merek' }}
                                     @endif
-                                </td>
-                                <td class="py-3.5 px-6">
-                                    @if ($item->barcode)
-                                        <span class="inline-flex font-mono text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 font-medium">
-                                            {{ $item->barcode }}
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="py-3.5 px-6 text-gray-700 dark:text-gray-300">
-                                    @if ($item->location_name)
-                                        <div class="inline-flex items-center gap-1.5">
-                                            <x-filament::icon icon="heroicon-m-map-pin" class="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                            <span>{{ $item->location_name }}</span>
-                                        </div>
-                                    @else
-                                        <span class="italic text-gray-400">Tanpa ruangan</span>
-                                    @endif
-                                </td>
-                                <td class="py-3.5 px-6 text-right tabular-nums">
-                                    <span class="font-bold text-gray-900 dark:text-white">
-                                        {{ number_format($item->quantity) }}
-                                    </span>
-                                    <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                                        {{ $item->unit_name ?: 'Unit' }}
-                                    </span>
-                                </td>
-                                <td class="py-3.5 px-6 text-center">
-                                    @php
-                                        $kondisi = $item->kondisi ?? null;
-                                        $kondisiLabel = match ($kondisi) {
-                                            'good' => 'Baik',
-                                            'minor_damage' => 'Rusak Ringan',
-                                            'major_damage' => 'Rusak Berat',
-                                            default => $kondisi ? ucfirst(str_replace('_', ' ', $kondisi)) : '—',
-                                        };
-                                        $kondisiColor = match ($kondisi) {
-                                            'good' => 'success',
-                                            'minor_damage' => 'warning',
-                                            'major_damage' => 'danger',
-                                            default => 'gray',
-                                        };
-                                    @endphp
-                                    <x-filament::badge :color="$kondisiColor" size="sm">
-                                        {{ $kondisiLabel }}
-                                    </x-filament::badge>
-                                </td>
+                                </th>
+                                <td class="p-4 text-right tabular-nums">{{ number_format($entry->asset_count) }}</td>
+                                <td class="p-4 text-right tabular-nums">{{ number_format($entry->inventory_count) }}</td>
+                                <td class="p-4 text-right tabular-nums">{{ number_format($entry->stock_quantity) }}</td>
+                                <td class="p-4 text-right tabular-nums font-bold">{{ number_format($entry->quantity) }}</td>
+                                <td class="p-4">{{ $entry->unit_name }}</td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="6" class="py-10 px-6 text-center text-gray-500 dark:text-gray-400">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <x-filament::icon icon="heroicon-o-archive-box-x-mark" class="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-                                        <p class="font-medium text-gray-700 dark:text-gray-300">Belum ada barang pada penempatan ini.</p>
-                                        @if (filled($search) || $type !== 'all')
-                                            <p class="text-xs text-gray-400 mt-1">Tidak ada barang yang cocok dengan kriteria pencarian.</p>
-                                            <div class="mt-3">
-                                                <x-filament::button wire:click="resetFilters" size="xs" color="gray">
-                                                    Hapus Filter Pencarian
-                                                </x-filament::button>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
+                            <tr><td colspan="6" class="p-8 text-center text-gray-500">Tidak ada barang yang sesuai pada lokasi ini.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-
-            <div class="p-4 border-t border-gray-200 dark:border-white/10">
-                {{ $items->links() }}
-            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">Jumlah total mencakup semua klasifikasi, termasuk BHP yang dicatat per unit. Jika satuannya beragam, jumlah merupakan gabungan kuantitas, bukan satu satuan yang sama.</p>
+            <div class="mt-4">{{ $items->links() }}</div>
         </x-filament::section>
     @endif
 </x-filament-panels::page>
