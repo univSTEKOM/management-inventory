@@ -67,9 +67,16 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return $this->belongsToMany(Role::class);
     }
 
+    /**
+     * Direct permission overrides (allow / deny / inherit) per user.
+     * Kolom `type` pada pivot menentukan perilaku override:
+     *  - 'allow'   : izin eksplisit diberikan, mengalahkan ketiadaan di role
+     *  - 'deny'    : izin eksplisit ditolak, mengalahkan pemberian via role
+     *  - 'inherit' : ikuti role (berlaku seperti tidak ada record override)
+     */
     public function permissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class);
+        return $this->belongsToMany(Permission::class)->withPivot('type');
     }
 
     public function hasRole(string $role): bool
@@ -77,21 +84,86 @@ class User extends Authenticatable implements FilamentUser, HasAvatar
         return $this->roles()->where('name', $role)->exists();
     }
 
+    /**
+     * Resolusi permission dengan urutan prioritas:
+     * 1. Superadmin — bypass penuh, selalu true
+     * 2. Cek override per-user:
+     *    a. 'deny'    → false (tolak eksplisit mengalahkan role)
+     *    b. 'allow'   → true (izin eksplisit mengalahkan ketiadaan di role)
+     *    c. 'inherit' → lanjut ke langkah 3
+     * 3. Cek via role → true jika salah satu role punya permission
+     * 4. Default → false (tolak jika tidak ada izin yang berlaku)
+     */
     public function hasPermissionTo(string $permission): bool
     {
+        // Superadmin bypass semua pemeriksaan
         if ($this->hasRole('Superadmin')) {
             return true;
         }
 
-        // Check if user has direct permission
-        if ($this->permissions()->where('name', $permission)->exists()) {
-            return true;
+        // Cek override per-user dari tabel permission_user
+        $override = $this->permissions()
+            ->where('permissions.name', $permission)
+            ->first();
+
+        if ($override !== null) {
+            $type = $override->pivot->type ?? 'allow';
+
+            // Tolak eksplisit — mengalahkan permission dari role
+            if ($type === 'deny') {
+                return false;
+            }
+
+            // Izin eksplisit — langsung true
+            if ($type === 'allow') {
+                return true;
+            }
+
+            // 'inherit' — jatuh ke pemeriksaan role di bawah
         }
 
-        // Check if any of the user's roles have the permission
+        // Cek apakah salah satu role user memiliki permission ini
         return $this->roles()->whereHas('permissions', function ($q) use ($permission) {
-            $q->where('name', $permission);
+            $q->where('permissions.name', $permission);
         })->exists();
+    }
+
+    /**
+     * Menghitung permission efektif untuk user ini pada satu permission.
+     * Mengembalikan:
+     *  - 'superadmin' : user adalah Superadmin
+     *  - 'deny'       : ditolak eksplisit via override
+     *  - 'allow'      : diizinkan eksplisit via override
+     *  - 'role'       : diizinkan via role
+     *  - 'none'       : tidak ada izin yang berlaku
+     */
+    public function effectivePermissionStatus(string $permission): string
+    {
+        if ($this->hasRole('Superadmin')) {
+            return 'superadmin';
+        }
+
+        $override = $this->permissions()
+            ->where('permissions.name', $permission)
+            ->first();
+
+        if ($override !== null) {
+            $type = $override->pivot->type ?? 'allow';
+
+            if ($type === 'deny') {
+                return 'deny';
+            }
+
+            if ($type === 'allow') {
+                return 'allow';
+            }
+        }
+
+        $viaRole = $this->roles()->whereHas('permissions', function ($q) use ($permission) {
+            $q->where('permissions.name', $permission);
+        })->exists();
+
+        return $viaRole ? 'role' : 'none';
     }
 
     public const PANEL_PERMISSIONS = [

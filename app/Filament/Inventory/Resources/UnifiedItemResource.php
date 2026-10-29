@@ -23,6 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -52,6 +53,11 @@ class UnifiedItemResource extends Resource
     public static function getPluralModelLabel(): string
     {
         return 'Semua Barang';
+    }
+
+    public static function canAccess(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('assets.view');
     }
 
     public static function form(Schema $schema): Schema

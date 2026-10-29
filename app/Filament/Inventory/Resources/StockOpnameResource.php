@@ -11,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Filament\Schemas\Components\Section;
+use Illuminate\Support\Facades\Auth;
 
 class StockOpnameResource extends Resource
 {
@@ -34,6 +35,11 @@ class StockOpnameResource extends Resource
     public static function getPluralModelLabel(): string
     {
         return 'Stock Opname';
+    }
+
+    public static function canAccess(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('stock_opname.view');
     }
 
     public static function form(Schema $schema): Schema

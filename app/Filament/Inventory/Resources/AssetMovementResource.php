@@ -40,6 +40,11 @@ class AssetMovementResource extends Resource
         return 'Mutasi Aset';
     }
 
+    public static function canAccess(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('movements.view');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

@@ -6,12 +6,18 @@ use App\Models\Mutation;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
+use Illuminate\Support\Facades\Auth;
 
 class LatestAssetMovements extends TableWidget
 {
     protected int | string | array $columnSpan = 2;
 
     protected static ?int $sort = 1;
+
+    public static function canView(): bool
+    {
+        return Auth::check() && Auth::user()->hasPermissionTo('dashboard.widget.latest_movements');
+    }
 
     protected function getTableHeading(): string
     {

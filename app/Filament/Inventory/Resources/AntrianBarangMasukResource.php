@@ -81,6 +81,11 @@ class AntrianBarangMasukResource extends Resource
         return 'Barang Masuk';
     }
 
+    public static function canAccess(): bool
+    {
+        return Auth::check() && (Auth::user()->hasPermissionTo('intake.complete') || Auth::user()->hasPermissionTo('assets.view'));
+    }
+
     /**
      * Sumber data cuma Asset hasil lapor OB yang belum diproses —
      * scope-nya sama persis dengan BarangMasukController::index().
