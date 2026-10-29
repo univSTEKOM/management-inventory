@@ -181,7 +181,8 @@ class ItemRecapitulationTest extends TestCase
         $this->authorizeReports();
         $first = Asset::factory()->create(['name' => 'AC', 'brand' => null, 'unit' => 'Unit']);
         $placement = ['campus_id' => $first->campus_id, 'location_id' => $first->location_id];
-        Asset::factory()->count(26)->create($placement + ['name' => 'AC', 'brand' => '', 'unit' => 'Unit']);
+        Asset::factory()->count(25)->create($placement + ['name' => 'AC', 'brand' => '', 'unit' => 'Unit']);
+        Asset::factory()->create($placement + ['name' => 'AC ', 'brand' => '', 'unit' => 'Unit']);
         Asset::factory()->create($placement + ['name' => 'AC', 'brand' => ' ', 'unit' => 'Paket']);
         $page = $this->page($first->campus_id, $first->location_id);
         $this->assertEquals(1, $page->data()['items']->total());

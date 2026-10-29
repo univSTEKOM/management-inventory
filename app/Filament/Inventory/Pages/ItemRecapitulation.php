@@ -123,9 +123,12 @@ class ItemRecapitulation extends Page
 
         // Aggregate in SQL before pagination: one row per name, then per brand.
         if ($this->item !== null) {
-            $itemsQuery->where('item_name', $this->item);
+            $itemsQuery->where(function ($q) {
+                $q->where('item_name', $this->item)
+                    ->orWhereRaw('TRIM(item_name) = ?', [trim($this->item)]);
+            });
         }
-        $dimension = $this->item === null ? 'item_name' : "COALESCE(NULLIF(TRIM(brand), ''), '')";
+        $dimension = $this->item === null ? 'TRIM(item_name)' : "COALESCE(NULLIF(TRIM(brand), ''), '')";
         $dimensionAlias = $this->item === null ? 'item_name' : 'brand';
         $itemsQuery->selectRaw("{$dimension} as {$dimensionAlias}, SUM(quantity) as quantity, {$countSql},
             CASE WHEN COUNT(DISTINCT COALESCE(NULLIF(TRIM(unit_name), ''), '—')) = 1
