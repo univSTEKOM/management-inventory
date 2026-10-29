@@ -1,10 +1,10 @@
 <x-filament-panels::page>
     {{-- Breadcrumb & Scope Navigation Bar --}}
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-xs">
-        <nav aria-label="Navigasi rekapitulasi" class="flex items-center flex-wrap gap-2 text-sm">
+    <div class="flex items-center justify-between gap-3 p-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-xs">
+        <nav aria-label="Navigasi hierarki rekapitulasi" class="flex items-center flex-wrap gap-2 text-sm">
             <x-filament::link
                 :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl()"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium transition {{ !$selectedCampus ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 font-semibold ring-1 ring-primary-500/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white' }}"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm transition {{ !$selectedCampus ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 font-semibold ring-1 ring-primary-500/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium' }}"
             >
                 <x-filament::icon icon="heroicon-m-building-office-2" class="w-4 h-4 shrink-0" />
                 <span>Semua Homebase</span>
@@ -14,7 +14,7 @@
                 <x-filament::icon icon="heroicon-m-chevron-right" class="w-4 h-4 text-gray-400 dark:text-gray-600 shrink-0" />
                 <x-filament::link
                     :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(['campus' => $selectedCampus->id])"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium transition {{ !$selectedRoom && !$selectedItem ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 font-semibold ring-1 ring-primary-500/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white' }}"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm transition {{ !$selectedRoom && !$selectedItem ? 'bg-primary-50 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 font-semibold ring-1 ring-primary-500/20' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium' }}"
                 >
                     <x-filament::icon icon="heroicon-m-academic-cap" class="w-4 h-4 shrink-0" />
                     <span>{{ $selectedCampus->name }}</span>
@@ -48,170 +48,145 @@
             @endif
         </nav>
 
-        {{-- Single Smart Back Button (navigating up 1 level) --}}
+        {{-- Action Button on the Right: only when drilled down into Room or Item --}}
         @if ($selectedItem)
-            <div class="flex items-center gap-2 self-start sm:self-auto">
-                <x-filament::button
-                    :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(array_filter(['campus' => $selectedCampus?->id, 'room' => $selectedRoom?->id, 'search' => $search, 'type' => $type]))"
-                    tag="a"
-                    size="sm"
-                    color="gray"
-                    icon="heroicon-m-arrow-left"
-                >
-                    Kembali ke Daftar Barang
-                </x-filament::button>
-            </div>
+            <x-filament::button
+                :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(array_filter(['campus' => $selectedCampus?->id, 'room' => $selectedRoom?->id, 'search' => $search, 'type' => $type]))"
+                tag="a"
+                size="sm"
+                color="gray"
+                icon="heroicon-m-arrow-left"
+            >
+                Kembali ke Daftar Barang
+            </x-filament::button>
         @elseif ($selectedRoom)
-            <div class="flex items-center gap-2 self-start sm:self-auto">
-                <x-filament::button
-                    :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(['campus' => $selectedCampus->id])"
-                    tag="a"
-                    size="sm"
-                    color="gray"
-                    icon="heroicon-m-arrow-left"
-                >
-                    Kembali ke {{ $selectedCampus->name }}
-                </x-filament::button>
-            </div>
-        @elseif ($selectedCampus)
-            <div class="flex items-center gap-2 self-start sm:self-auto">
-                <x-filament::button
-                    :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl()"
-                    tag="a"
-                    size="sm"
-                    color="gray"
-                    icon="heroicon-m-arrow-left"
-                >
-                    Kembali ke Semua Homebase
-                </x-filament::button>
-            </div>
+            <x-filament::button
+                :href="\App\Filament\Inventory\Pages\ItemRecapitulation::getUrl(['campus' => $selectedCampus->id])"
+                tag="a"
+                size="sm"
+                color="gray"
+                icon="heroicon-m-arrow-left"
+            >
+                Kembali ke {{ $selectedCampus->name }}
+            </x-filament::button>
         @endif
     </div>
 
-    {{-- Executive KPI Cards (Responsive 4-Grid) --}}
+    {{-- Executive KPI Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {{-- Card 1: Aset --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
+        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-sm">
             <div class="flex items-start justify-between">
                 <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 mb-2">
-                        Unit Fisik Aset
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
                         Aset
                     </p>
-                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
+                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1.5 tracking-tight">
                         {{ number_format($assetCount) }}
                     </h3>
                 </div>
-                <div class="rounded-xl p-3 bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
-                    <x-filament::icon icon="heroicon-o-cube" class="w-6 h-6" />
+                <div class="rounded-xl p-2.5 bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shrink-0">
+                    <x-filament::icon icon="heroicon-o-cube" class="w-5 h-5" />
                 </div>
             </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Aset ber-barcode dan tercatat individual.
+            <p class="mt-2.5 text-xs text-gray-500 dark:text-gray-400">
+                Aset individual ber-barcode.
             </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+            <div class="absolute bottom-0 inset-x-0 h-0.5 bg-blue-500"></div>
         </div>
 
         {{-- Card 2: Inventaris --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
+        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-sm">
             <div class="flex items-start justify-between">
                 <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 mb-2">
-                        Inventaris Kantor
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">
                         Inventaris
                     </p>
-                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
+                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1.5 tracking-tight">
                         {{ number_format($inventoryCount) }}
                     </h3>
                 </div>
-                <div class="rounded-xl p-3 bg-violet-50 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400 border border-violet-100 dark:border-violet-900/50">
-                    <x-filament::icon icon="heroicon-o-clipboard-document-check" class="w-6 h-6" />
+                <div class="rounded-xl p-2.5 bg-violet-50 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400 border border-violet-100 dark:border-violet-900/50 shrink-0">
+                    <x-filament::icon icon="heroicon-o-clipboard-document-check" class="w-5 h-5" />
                 </div>
             </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Barang inventaris operasional terdata.
+            <p class="mt-2.5 text-xs text-gray-500 dark:text-gray-400">
+                Barang inventaris operasional.
             </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-violet-500 to-purple-600"></div>
+            <div class="absolute bottom-0 inset-x-0 h-0.5 bg-violet-500"></div>
         </div>
 
         {{-- Card 3: Stok BHP --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
+        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-sm">
             <div class="flex items-start justify-between">
                 <div>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 mb-2">
-                        Barang Habis Pakai
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                         Stok BHP
                     </p>
-                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 tracking-tight">
+                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1.5 tracking-tight">
                         {{ number_format($stockQuantity) }}
                     </h3>
                 </div>
-                <div class="rounded-xl p-3 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50">
-                    <x-filament::icon icon="heroicon-o-circle-stack" class="w-6 h-6" />
+                <div class="rounded-xl p-2.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50 shrink-0">
+                    <x-filament::icon icon="heroicon-o-circle-stack" class="w-5 h-5" />
                 </div>
             </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                Akumulasi kuantitas persediaan BHP.
+            <p class="mt-2.5 text-xs text-gray-500 dark:text-gray-400">
+                Akumulasi kuantitas habis pakai.
             </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-600"></div>
+            <div class="absolute bottom-0 inset-x-0 h-0.5 bg-emerald-500"></div>
         </div>
 
-        {{-- Card 4: Cakupan Lokasi --}}
-        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-md">
+        {{-- Card 4: Total Akumulasi --}}
+        <div class="relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 shadow-xs transition hover:shadow-sm">
             <div class="flex items-start justify-between">
-                <div class="min-w-0 pr-2">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 mb-2">
-                        Cakupan Rekap
-                    </span>
-                    <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Lokasi Ditampilkan
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                        Total Akumulasi
                     </p>
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mt-1.5 truncate" title="{{ $selectedRoom ? $selectedRoom->name : ($selectedCampus ? $selectedCampus->name : 'Seluruh Homebase') }}">
-                        @if ($selectedRoom)
-                            {{ $selectedRoom->name }}
-                        @elseif ($selectedCampus)
-                            {{ $selectedCampus->name }}
-                        @else
-                            Seluruh Homebase
-                        @endif
+                    <h3 class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1.5 tracking-tight">
+                        {{ number_format($assetCount + $inventoryCount + $stockQuantity) }}
                     </h3>
                 </div>
-                <div class="rounded-xl p-3 bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 shrink-0">
-                    <x-filament::icon icon="heroicon-o-map-pin" class="w-6 h-6" />
+                <div class="rounded-xl p-2.5 bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 shrink-0">
+                    <x-filament::icon icon="heroicon-o-squares-2x2" class="w-5 h-5" />
                 </div>
             </div>
-            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400 truncate">
-                @if ($selectedRoom)
-                    Homebase: <strong class="text-gray-700 dark:text-gray-300">{{ $selectedCampus->name }}</strong>
-                @elseif ($selectedCampus)
-                    <strong class="text-gray-700 dark:text-gray-300">{{ $groups->count() }}</strong> Ruangan terdata
-                @else
-                    <strong class="text-gray-700 dark:text-gray-300">{{ $groups->count() }}</strong> Homebase terdaftar
-                @endif
+            <p class="mt-2.5 text-xs text-gray-500 dark:text-gray-400 truncate">
+                {{ $selectedRoom ? 'Di ' . $selectedRoom->name : ($selectedCampus ? 'Di ' . $selectedCampus->name : 'Di seluruh homebase') }}
             </p>
-            <div class="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 to-orange-600"></div>
+            <div class="absolute bottom-0 inset-x-0 h-0.5 bg-amber-500"></div>
         </div>
     </div>
 
-    {{-- Information Callout --}}
-    <div class="flex items-start gap-3 p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/40 text-xs sm:text-sm text-blue-900 dark:text-blue-200">
-        <x-filament::icon icon="heroicon-m-information-circle" class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-        <div class="leading-relaxed">
-            <span class="font-semibold">Catatan Rekapitulasi:</span> Data mengikuti penempatan riil barang saat ini. Aset dan inventaris dihitung per unit fisik individual, sedangkan stok BHP merupakan akumulasi kuantitas persediaan. Barang yang dihapus (<em>soft deleted</em>) atau berstatus menunggu pemeriksaan otomatis dikecualikan.
-        </div>
-    </div>
+    {{-- View Switcher Tabs (when in campus view without specific room or item drilldown) --}}
+    @if ($selectedCampus && !$selectedRoom && !$selectedItem)
+        <div class="flex items-center gap-2 border-b border-gray-200 dark:border-white/10 pb-2">
+            <x-filament::button
+                wire:click="setTab('rooms')"
+                :color="($tab === 'rooms' && !filled($search) && $type === 'all') ? 'primary' : 'gray'"
+                size="sm"
+                icon="heroicon-m-map-pin"
+            >
+                Rekapitulasi per Ruangan ({{ $groups->count() }})
+            </x-filament::button>
 
-    {{-- Rekapitulasi per Homebase / Rekapitulasi per Ruangan (when not on specific room or item drilldown) --}}
-    @if (!$selectedRoom && !$selectedItem)
+            <x-filament::button
+                wire:click="setTab('items')"
+                :color="($tab === 'items' || filled($search) || $type !== 'all') ? 'primary' : 'gray'"
+                size="sm"
+                icon="heroicon-m-squares-2x2"
+            >
+                Daftar Seluruh Barang ({{ number_format($items->total()) }})
+            </x-filament::button>
+        </div>
+    @endif
+
+    {{-- Rekapitulasi per Homebase / Rekapitulasi per Ruangan Table --}}
+    @if (!$selectedRoom && !$selectedItem && (!$selectedCampus || ($tab === 'rooms' && !filled($search) && $type === 'all')))
         <x-filament::section
             :heading="$selectedCampus ? 'Rekapitulasi per Ruangan di ' . $selectedCampus->name : 'Rekapitulasi per Homebase'"
-            :description="$selectedCampus ? 'Klik nama ruangan atau tombol telusuri untuk melihat rincian barang spesifik di ruangan tersebut.' : 'Klik nama homebase atau tombol telusuri untuk melihat sebaran per ruangan dan seluruh barang di kampus terkait.'"
+            :description="$selectedCampus ? 'Klik nama ruangan atau tombol Lihat Barang untuk melihat rincian barang spesifik di ruangan tersebut.' : 'Klik nama homebase atau tombol Telusuri untuk melihat sebaran per ruangan dan daftar barang.'"
         >
             <x-slot name="headerEnd">
                 <x-filament::badge color="gray" size="sm">
@@ -233,7 +208,7 @@
                                 Inventaris
                             </th>
                             <th scope="col" class="py-3.5 px-6 font-semibold text-right">
-                                Kuantitas Stok BHP
+                                Stok BHP
                             </th>
                             <th scope="col" class="py-3.5 px-6 font-semibold text-right">
                                 Total Akumulasi
@@ -375,11 +350,11 @@
         </x-filament::section>
     @endif
 
-    {{-- Detail Items Table (when campus or room is selected) --}}
-    @if ($items)
+    {{-- Detail Items Table (when room or item is selected, or items tab active on campus) --}}
+    @if ($items && ($selectedRoom || $selectedItem || $tab === 'items' || filled($search) || $type !== 'all'))
         <x-filament::section
-            :heading="$selectedItem !== null ? 'Rincian Merek: ' . $selectedItem : ($selectedRoom ? 'Daftar Barang di ' . $selectedRoom->name : 'Daftar Barang di ' . $selectedCampus->name)"
-            :description="$selectedItem !== null ? 'Persebaran jumlah berdasarkan merek untuk barang ' . $selectedItem . ' di ' . ($selectedRoom ? $selectedRoom->name : $selectedCampus->name) . '.' : 'Nama barang yang sama digabung otomatis. Klik nama barang untuk melihat rincian per merek.'"
+            :heading="$selectedItem !== null ? 'Rincian Merek: ' . $selectedItem : ($selectedRoom ? 'Daftar Barang di ' . $selectedRoom->name : 'Daftar Seluruh Barang di ' . $selectedCampus->name)"
+            :description="$selectedItem !== null ? 'Persebaran jumlah berdasarkan merek untuk barang ' . $selectedItem . '.' : 'Nama barang yang sama digabung otomatis. Klik nama barang untuk melihat rincian per merek.'"
         >
             <x-slot name="headerEnd">
                 <x-filament::badge color="primary" size="sm">
@@ -403,20 +378,18 @@
                     </x-filament::input.wrapper>
                 </div>
 
-                <div class="flex flex-wrap items-end gap-2">
-                    {{-- Filter Tabs --}}
-                    <div role="group" aria-label="Filter jenis barang" class="inline-flex flex-wrap rounded-lg p-1 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-white/10 text-xs font-medium">
-                        @foreach (['all' => 'Semua', 'asset' => 'Aset', 'inventory' => 'Inventaris', 'supply' => 'Stok BHP'] as $value => $label)
-                            <button
-                                type="button"
-                                wire:click="setType('{{ $value }}')"
-                                aria-pressed="{{ $type === $value ? 'true' : 'false' }}"
-                                class="px-3 py-1.5 rounded-md transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 {{ $type === $value ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-semibold' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white' }}"
-                            >
-                                {{ $label }}
-                            </button>
-                        @endforeach
-                    </div>
+                {{-- Filter Buttons --}}
+                <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter jenis barang">
+                    @foreach (['all' => 'Semua', 'asset' => 'Aset', 'inventory' => 'Inventaris', 'supply' => 'Stok BHP'] as $value => $label)
+                        <x-filament::button
+                            wire:click="setType('{{ $value }}')"
+                            :color="$type === $value ? 'primary' : 'gray'"
+                            size="sm"
+                            :aria-pressed="$type === $value ? 'true' : 'false'"
+                        >
+                            {{ $label }}
+                        </x-filament::button>
+                    @endforeach
 
                     @if (filled($search) || $type !== 'all')
                         <x-filament::button
@@ -425,7 +398,7 @@
                             color="gray"
                             icon="heroicon-m-x-mark"
                         >
-                            Reset filter
+                            Reset Filter
                         </x-filament::button>
                     @endif
                 </div>
