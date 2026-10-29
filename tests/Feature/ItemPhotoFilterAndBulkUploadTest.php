@@ -111,9 +111,10 @@ class ItemPhotoFilterAndBulkUploadTest extends TestCase
 
     private function grantAssetsUpdate(User $user): void
     {
+        $permView = Permission::firstOrCreate(['name' => 'assets.view']);
         $permission = Permission::firstOrCreate(['name' => 'assets.update']);
         $role = Role::firstOrCreate(['name' => 'operator-foto']);
-        $role->permissions()->syncWithoutDetaching([$permission->id]);
+        $role->permissions()->syncWithoutDetaching([$permView->id, $permission->id]);
         $user->roles()->syncWithoutDetaching([$role->id]);
     }
 
@@ -516,6 +517,10 @@ class ItemPhotoFilterAndBulkUploadTest extends TestCase
     {
         $asset = $this->makeAsset();
         $viewer = User::factory()->create();
+        $permView = Permission::firstOrCreate(['name' => 'assets.view']);
+        $role = Role::firstOrCreate(['name' => 'viewer-only']);
+        $role->permissions()->syncWithoutDetaching([$permView->id]);
+        $viewer->roles()->syncWithoutDetaching([$role->id]);
         $this->actingAs($viewer);
 
         Livewire::test(ListUnifiedItems::class)

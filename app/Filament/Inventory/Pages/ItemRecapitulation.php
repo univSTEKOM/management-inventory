@@ -32,20 +32,38 @@ class ItemRecapitulation extends Page
     #[Url]
     public ?string $item = null;
 
+    #[Url]
+    public string $tab = 'rooms';
+
     public function updatingSearch(): void
     {
         $this->item = null;
+        if ($this->campus && !$this->room) {
+            $this->tab = 'items';
+        }
         $this->resetPage();
     }
 
     public function updatingType(): void
     {
+        if ($this->campus && !$this->room) {
+            $this->tab = 'items';
+        }
         $this->resetPage();
     }
 
     public function setType(string $type): void
     {
         $this->type = $type;
+        if ($this->campus && !$this->room) {
+            $this->tab = 'items';
+        }
+        $this->resetPage();
+    }
+
+    public function setTab(string $tab): void
+    {
+        $this->tab = $tab;
         $this->resetPage();
     }
 
@@ -123,9 +141,12 @@ class ItemRecapitulation extends Page
 
         // Aggregate in SQL before pagination: one row per name, then per brand.
         if ($this->item !== null) {
-            $itemsQuery->where('item_name', $this->item);
+            $itemsQuery->where(function ($q) {
+                $q->where('item_name', $this->item)
+                    ->orWhereRaw('TRIM(item_name) = ?', [trim($this->item)]);
+            });
         }
-        $dimension = $this->item === null ? 'item_name' : "COALESCE(NULLIF(TRIM(brand), ''), '')";
+        $dimension = $this->item === null ? "COALESCE(NULLIF(TRIM(item_name), ''), 'Tanpa Nama')" : "COALESCE(NULLIF(TRIM(brand), ''), '')";
         $dimensionAlias = $this->item === null ? 'item_name' : 'brand';
         $itemsQuery->selectRaw("{$dimension} as {$dimensionAlias}, SUM(quantity) as quantity, {$countSql},
             CASE WHEN COUNT(DISTINCT COALESCE(NULLIF(TRIM(unit_name), ''), '—')) = 1
@@ -150,6 +171,7 @@ class ItemRecapitulation extends Page
                 : null,
             'search' => $this->search,
             'type' => $this->type,
+            'tab' => $this->tab,
         ];
     }
 }
