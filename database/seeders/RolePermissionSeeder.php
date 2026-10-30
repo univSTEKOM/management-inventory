@@ -15,6 +15,7 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             // Asset
             'assets.view', 'assets.create', 'assets.update', 'assets.delete',
+            'assets.widget.total_items', 'assets.widget.acquisition_value',
             // Supplies (Barang Habis Pakai)
             'supplies.stock_in', 'supplies.update',
             // Intake (Antrian Barang Masuk — Finance "Lengkapi Data")
@@ -67,6 +68,7 @@ class RolePermissionSeeder extends Seeder
 
             'Tim Inventaris' => [
                 'panel.inventory',
+                'assets.widget.total_items',
                 'assets.view', 'assets.create', 'assets.update',
                 'supplies.stock_in', 'supplies.update',
                 'categories.view', 'categories.create', 'categories.update',
@@ -93,9 +95,11 @@ class RolePermissionSeeder extends Seeder
 
             'Finance' => [
                 'panel.inventory',
+                'assets.widget.total_items',
                 'assets.view',
                 'supplies.stock_in',
                 'intake.complete',
+                'assets.widget.acquisition_value',
                 'financial.view', 'financial.export',
                 'reports.view', 'reports.export',
                 // Dashboard permissions (Finance melihat finansial)
@@ -106,6 +110,7 @@ class RolePermissionSeeder extends Seeder
 
             'Approver' => [
                 'panel.inventory',
+                'assets.widget.total_items',
                 'assets.view',
                 'movements.view', 'movements.approve', 'movements.reject', 'movements.complete',
                 'status.view', 'status.approve',

@@ -106,6 +106,8 @@ class UserResource extends Resource
         $labels = [
             // Dashboard
             'dashboard.view' => 'Melihat Halaman Dashboard',
+            'assets.widget.total_items' => 'Card Total Barang — Menu Aset & Inventaris',
+            'assets.widget.acquisition_value' => 'Card Total Harga Perolehan — Menu Aset & Inventaris',
             'dashboard.widget.total_assets' => 'Card Total Barang / Aset',
             'dashboard.widget.total_categories' => 'Card Total Kategori',
             'dashboard.widget.total_locations' => 'Card Total Lokasi',

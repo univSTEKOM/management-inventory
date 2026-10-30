@@ -277,5 +277,65 @@ class PermissionSystemTest extends TestCase
         $user->permissions()->attach($pAssets->id, ['type' => 'deny']);
         $this->assertEquals('deny', $user->fresh()->effectivePermissionStatus('assets.view'));
     }
+    public function test_category_cards_follow_independent_permissions_and_financial_access()
+    {
+        $role = Role::where('name', 'Finance')->firstOrFail();
+        $user = User::factory()->create();
+        $user->roles()->attach($role->id);
+        $widgetClass = \App\Filament\Inventory\Resources\Widgets\CategoryAssetStatsWidget::class;
+        $method = new \ReflectionMethod($widgetClass, 'getStats');
+
+        // Dashboard overrides must not affect cards in the category menus.
+        foreach (['dashboard.widget.total_assets', 'dashboard.widget.asset_acquisition_value'] as $name) {
+            $permission = Permission::where('name', $name)->firstOrFail();
+            $user->permissions()->attach($permission->id, ['type' => 'deny']);
+        }
+
+        $cases = [
+            [true, true, true, ['Total Barang', 'Total Harga Perolehan']],
+            [false, true, true, ['Total Harga Perolehan']],
+            [true, false, true, ['Total Barang']],
+            [false, false, true, []],
+            [true, true, false, ['Total Barang']],
+            [false, true, false, []],
+        ];
+
+        foreach ($cases as [$items, $price, $financial, $expected]) {
+            foreach ([
+                'assets.widget.total_items' => $items,
+                'assets.widget.acquisition_value' => $price,
+                'financial.view' => $financial,
+            ] as $name => $allowed) {
+                $permission = Permission::where('name', $name)->firstOrFail();
+                $user->permissions()->syncWithoutDetaching([
+                    $permission->id => ['type' => $allowed ? 'allow' : 'deny'],
+                ]);
+            }
+
+            $this->actingAs($user->fresh());
+            $this->assertSame($expected !== [], $widgetClass::canView());
+
+            foreach (['aset', 'inventaris'] as $slug) {
+                $widget = new $widgetClass;
+                $widget->categorySlug = $slug;
+                $stats = $method->invoke($widget);
+                $this->assertSame($expected, array_map(fn ($stat) => $stat->getLabel(), $stats));
+            }
+        }
+    }
+
+    public function test_category_cards_are_hidden_for_guests_and_users_without_permissions()
+    {
+        $widgetClass = \App\Filament\Inventory\Resources\Widgets\CategoryAssetStatsWidget::class;
+        $method = new \ReflectionMethod($widgetClass, 'getStats');
+
+        $this->assertFalse($widgetClass::canView());
+        $this->assertSame([], $method->invoke(new $widgetClass));
+
+        $this->actingAs(User::factory()->create());
+        $this->assertFalse($widgetClass::canView());
+        $this->assertSame([], $method->invoke(new $widgetClass));
+    }
+
 }
 

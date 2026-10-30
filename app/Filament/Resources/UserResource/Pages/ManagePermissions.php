@@ -111,7 +111,7 @@ class ManagePermissions extends EditRecord
             ],
             'assets' => [
                 'label' => 'Inventaris & Aset Barang',
-                'description' => 'Akses menu daftar barang, penambahan, pengubahan, dan penghapusan data aset.',
+                'description' => 'Akses menu daftar barang dan pengelolaan aset, serta visibilitas card Total Barang dan Total Harga Perolehan pada menu Aset dan Inventaris.',
                 'icon' => 'heroicon-o-cube',
             ],
             'financial' => [
