@@ -197,17 +197,21 @@ class AddPhotoActions
             $photos = $record->photos()->orderBy('sort_order')->get(['file_path']);
             foreach ($photos as $photo) {
                 if (filled($photo->file_path)) {
+                    $clean = ltrim($photo->file_path, '/');
                     $urls[] = [
                         'thumb' => Storage::disk('s3_thumb')->url($photo->file_path),
-                        'full' => Storage::disk('s3')->url($photo->file_path),
+                        'full' => url('/asset-photo-view/'.$clean),
+                        'download' => url('/asset-photo-download/'.$clean),
                     ];
                 }
             }
         } elseif ($record instanceof InventoryBalance) {
             if (filled($record->photo)) {
+                $clean = ltrim($record->photo, '/');
                 $urls[] = [
                     'thumb' => Storage::disk('s3_thumb')->url($record->photo),
-                    'full' => Storage::disk('s3')->url($record->photo),
+                    'full' => url('/asset-photo-view/'.$clean),
+                    'download' => url('/asset-photo-download/'.$clean),
                 ];
             }
         } elseif ($record instanceof UnifiedItem) {
@@ -215,18 +219,22 @@ class AddPhotoActions
                 $photos = Asset::find((int) $record->raw_id)?->photos()->orderBy('sort_order')->get(['file_path']) ?? collect();
                 foreach ($photos as $photo) {
                     if (filled($photo->file_path)) {
+                        $clean = ltrim($photo->file_path, '/');
                         $urls[] = [
                             'thumb' => Storage::disk('s3_thumb')->url($photo->file_path),
-                            'full' => Storage::disk('s3')->url($photo->file_path),
+                            'full' => url('/asset-photo-view/'.$clean),
+                            'download' => url('/asset-photo-download/'.$clean),
                         ];
                     }
                 }
             } else {
                 $balance = InventoryBalance::find((int) $record->raw_id);
                 if ($balance && filled($balance->photo)) {
+                    $clean = ltrim($balance->photo, '/');
                     $urls[] = [
                         'thumb' => Storage::disk('s3_thumb')->url($balance->photo),
-                        'full' => Storage::disk('s3')->url($balance->photo),
+                        'full' => url('/asset-photo-view/'.$clean),
+                        'download' => url('/asset-photo-download/'.$clean),
                     ];
                 }
             }

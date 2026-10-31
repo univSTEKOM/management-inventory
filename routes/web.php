@@ -79,10 +79,12 @@ Route::get('/checklist/print', function (Request $request) {
 })->name('checklist.print')->middleware('auth');
 
 Route::get('/asset-photo-thumb/{path}', function (string $path) {
-    $disk = Storage::disk(config('filesystems.default', 's3'));
+    $disk = Storage::disk('s3');
     if (! $disk->exists($path)) {
         if (Storage::disk('public')->exists($path)) {
             $disk = Storage::disk('public');
+        } elseif (Storage::disk('local')->exists($path)) {
+            $disk = Storage::disk('local');
         } else {
             abort(404);
         }
@@ -107,11 +109,31 @@ Route::get('/asset-photo-thumb/{path}', function (string $path) {
         ->header('Cache-Control', 'public, max-age=31536000');
 })->where('path', '.*')->name('asset.photo.thumb');
 
-Route::get('/asset-photo-download/{path}', function (Request $request, string $path) {
-    $disk = Storage::disk(config('filesystems.default', 's3'));
+Route::get('/asset-photo-view/{path}', function (string $path) {
+    $disk = Storage::disk('s3');
     if (! $disk->exists($path)) {
         if (Storage::disk('public')->exists($path)) {
             $disk = Storage::disk('public');
+        } elseif (Storage::disk('local')->exists($path)) {
+            $disk = Storage::disk('local');
+        } else {
+            abort(404, 'File foto tidak ditemukan.');
+        }
+    }
+
+    return response($disk->get($path), 200, [
+        'Content-Type' => $disk->mimeType($path) ?: 'image/jpeg',
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->where('path', '.*')->name('asset.photo.view');
+
+Route::get('/asset-photo-download/{path}', function (Request $request, string $path) {
+    $disk = Storage::disk('s3');
+    if (! $disk->exists($path)) {
+        if (Storage::disk('public')->exists($path)) {
+            $disk = Storage::disk('public');
+        } elseif (Storage::disk('local')->exists($path)) {
+            $disk = Storage::disk('local');
         } else {
             abort(404, 'File foto tidak ditemukan.');
         }
