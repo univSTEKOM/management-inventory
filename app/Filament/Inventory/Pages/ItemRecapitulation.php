@@ -87,7 +87,7 @@ class ItemRecapitulation extends Page
 
     public static function canAccess(): bool
     {
-        return Auth::user()?->hasPermissionTo('reports.view') ?? false;
+        return Auth::user()?->hasPermissionTo('reports.rekapitulasi.view') ?? false;
     }
 
     protected function getViewData(): array

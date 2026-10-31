@@ -4,6 +4,7 @@ namespace App\Filament\Inventory\Resources;
 
 use App\Filament\Inventory\Resources\UnifiedItemResource\Pages;
 use App\Filament\Support\AddPhotoActions;
+use App\Filament\Support\ChangeBrandActions;
 use App\Filament\Support\ChangeCategoryActions;
 use App\Filament\Support\ChangeKondisiActions;
 use App\Filament\Support\ChangeStatusActions;
@@ -311,6 +312,7 @@ class UnifiedItemResource extends Resource
                 AddPhotoActions::bulkAction(),
                 MoveLocationActions::bulkAction(),
                 ChangeCategoryActions::bulkAction(),
+                ChangeBrandActions::bulkAction(),
                 ChangeStatusActions::bulkAction(),
                 ChangeKondisiActions::bulkAction(),
                 DeleteItemsActions::bulkAction(),

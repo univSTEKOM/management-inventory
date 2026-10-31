@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Inventory\Pages\AssetScanner;
+use App\Filament\Inventory\Pages\ItemRecapitulation;
+use App\Filament\Inventory\Pages\TransaksiPembelian;
+use App\Filament\Inventory\Pages\TransaksiPenjualan;
 use App\Filament\Inventory\Resources\AntrianBarangMasukResource;
 use App\Filament\Inventory\Resources\AssetMovementResource;
 use App\Filament\Inventory\Resources\AssetResource;
@@ -337,5 +341,71 @@ class PermissionSystemTest extends TestCase
         $this->assertSame([], $method->invoke(new $widgetClass));
     }
 
+    public function test_transaksi_pages_can_access_enforces_permissions()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Awalnya ditolak (tidak ada permission)
+        $this->assertFalse(TransaksiPembelian::canAccess());
+        $this->assertFalse(TransaksiPenjualan::canAccess());
+
+        // Berikan transactions.pembelian.view
+        $permPembelian = Permission::where('name', 'transactions.pembelian.view')->firstOrFail();
+        $user->permissions()->attach($permPembelian->id, ['type' => 'allow']);
+
+        $this->assertTrue(TransaksiPembelian::canAccess());
+        $this->assertFalse(TransaksiPenjualan::canAccess());
+
+        // Berikan transactions.penjualan.view
+        $permPenjualan = Permission::where('name', 'transactions.penjualan.view')->firstOrFail();
+        $user->permissions()->attach($permPenjualan->id, ['type' => 'allow']);
+
+        $this->assertTrue(TransaksiPembelian::canAccess());
+        $this->assertTrue(TransaksiPenjualan::canAccess());
+    }
+
+    public function test_rekapitulasi_and_intake_pages_can_access_enforces_permissions()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Awalnya ditolak
+        $this->assertFalse(ItemRecapitulation::canAccess());
+        $this->assertFalse(AntrianBarangMasukResource::canAccess());
+        $this->assertFalse(AssetScanner::canAccess());
+
+        // Berikan reports.rekapitulasi.view
+        $permRecap = Permission::where('name', 'reports.rekapitulasi.view')->firstOrFail();
+        $user->permissions()->attach($permRecap->id, ['type' => 'allow']);
+        $this->assertTrue(ItemRecapitulation::canAccess());
+
+        // Berikan intake.view
+        $permIntake = Permission::where('name', 'intake.view')->firstOrFail();
+        $user->permissions()->attach($permIntake->id, ['type' => 'allow']);
+        $this->assertTrue(AntrianBarangMasukResource::canAccess());
+
+        // Berikan asset_scanner.use
+        $permScanner = Permission::where('name', 'asset_scanner.use')->firstOrFail();
+        $user->permissions()->attach($permScanner->id, ['type' => 'allow']);
+        $this->assertTrue(AssetScanner::canAccess());
+    }
+
+    public function test_bulk_edit_brand_permission_authorization()
+    {
+        $superadmin = User::factory()->create();
+        $superadminRole = Role::firstOrCreate(['name' => 'Superadmin']);
+        $superadmin->roles()->attach($superadminRole->id);
+
+        $regularUser = User::factory()->create();
+
+        $this->assertTrue(\App\Filament\Support\ChangeBrandActions::userCanBulkEdit($superadmin));
+        $this->assertFalse(\App\Filament\Support\ChangeBrandActions::userCanBulkEdit($regularUser));
+
+        $perm = Permission::where('name', 'assets.bulk_edit_brand')->firstOrFail();
+        $regularUser->permissions()->attach($perm->id, ['type' => 'allow']);
+
+        $this->assertTrue(\App\Filament\Support\ChangeBrandActions::userCanBulkEdit($regularUser->fresh()));
+    }
 }
 

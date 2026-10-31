@@ -14,12 +14,12 @@ class RolePermissionSeeder extends Seeder
         // Define all permissions exactly as required
         $permissions = [
             // Asset
-            'assets.view', 'assets.create', 'assets.update', 'assets.delete',
+            'assets.view', 'assets.create', 'assets.update', 'assets.delete', 'assets.bulk_edit_brand',
             'assets.widget.total_items', 'assets.widget.acquisition_value',
             // Supplies (Barang Habis Pakai)
             'supplies.stock_in', 'supplies.update',
-            // Intake (Antrian Barang Masuk — Finance "Lengkapi Data")
-            'intake.complete',
+            // Intake (Antrian Barang Masuk)
+            'intake.view', 'intake.complete',
             // Master Data
             'categories.view', 'categories.create', 'categories.update', 'categories.delete',
             'campuses.view', 'campuses.create', 'campuses.update', 'campuses.delete',
@@ -35,8 +35,10 @@ class RolePermissionSeeder extends Seeder
             'asset_qr.view', 'asset_qr.generate', 'asset_scanner.use',
             // Financial
             'financial.view', 'financial.update', 'financial.export',
+            // Transactions
+            'transactions.pembelian.view', 'transactions.penjualan.view',
             // Reports
-            'reports.view', 'reports.export',
+            'reports.view', 'reports.rekapitulasi.view', 'reports.export',
             // Audit
             'audit.view', 'audit.export',
             // User Administration
@@ -71,6 +73,7 @@ class RolePermissionSeeder extends Seeder
                 'assets.widget.total_items',
                 'assets.view', 'assets.create', 'assets.update',
                 'supplies.stock_in', 'supplies.update',
+                'intake.view',
                 'categories.view', 'categories.create', 'categories.update',
                 'campuses.view', 'campuses.create', 'campuses.update',
                 'locations.view', 'locations.create', 'locations.update',
@@ -79,7 +82,7 @@ class RolePermissionSeeder extends Seeder
                 'status.view', 'status.update',
                 'stock_opname.view', 'stock_opname.create', 'stock_opname.update', 'stock_opname.complete',
                 'asset_qr.view', 'asset_qr.generate', 'asset_scanner.use',
-                'reports.view', 'reports.export',
+                'reports.view', 'reports.rekapitulasi.view', 'reports.export',
                 'audit.view',
                 // Dashboard permissions
                 'dashboard.view',
@@ -98,10 +101,11 @@ class RolePermissionSeeder extends Seeder
                 'assets.widget.total_items',
                 'assets.view',
                 'supplies.stock_in',
+                'intake.view',
                 'intake.complete',
                 'assets.widget.acquisition_value',
                 'financial.view', 'financial.export',
-                'reports.view', 'reports.export',
+                'reports.view', 'reports.rekapitulasi.view', 'reports.export',
                 // Dashboard permissions (Finance melihat finansial)
                 'dashboard.view',
                 'dashboard.widget.total_assets',
@@ -114,7 +118,7 @@ class RolePermissionSeeder extends Seeder
                 'assets.view',
                 'movements.view', 'movements.approve', 'movements.reject', 'movements.complete',
                 'status.view', 'status.approve',
-                'reports.view',
+                'reports.view', 'reports.rekapitulasi.view',
                 // Dashboard permissions
                 'dashboard.view',
                 'dashboard.widget.total_assets',

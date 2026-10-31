@@ -4,6 +4,7 @@ namespace App\Filament\Inventory\Resources;
 
 use App\Enums\AuditAction;
 use App\Filament\Inventory\Resources\InventoryBalanceResource\Pages;
+use App\Filament\Support\ChangeBrandActions;
 use App\Filament\Support\ChangeCategoryActions;
 use App\Filament\Support\DeleteItemsActions;
 use App\Filament\Support\MoveLocationActions;
@@ -340,6 +341,7 @@ class InventoryBalanceResource extends Resource
                 \App\Filament\Support\AddPhotoActions::bulkAction(),
                 MoveLocationActions::bulkAction(),
                 ChangeCategoryActions::bulkAction(),
+                ChangeBrandActions::bulkAction(),
                 DeleteItemsActions::bulkAction(),
             ]);
     }

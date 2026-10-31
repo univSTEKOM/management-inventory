@@ -122,10 +122,12 @@ class UserResource extends Resource
             'assets.create' => 'Menambah Barang Baru',
             'assets.update' => 'Mengubah Data Barang',
             'assets.delete' => 'Menghapus Barang',
+            'assets.bulk_edit_brand' => 'Ubah Merk / Tipe Massal (Bulk Edit)',
             // Supplies
             'supplies.stock_in' => 'Stok Masuk Barang Habis Pakai',
             'supplies.update' => 'Mengubah Data Barang Habis Pakai',
             // Intake
+            'intake.view' => 'Melihat Menu Antrian Barang Masuk',
             'intake.complete' => 'Melengkapi Data Barang Masuk (Finance)',
             // Master Data
             'categories.view' => 'Melihat Master Kategori',
@@ -145,30 +147,34 @@ class UserResource extends Resource
             'employees.update' => 'Mengubah Master Karyawan / PIC',
             'employees.delete' => 'Menghapus Master Karyawan / PIC',
             // Movements
-            'movements.view' => 'Melihat Riwayat Mutasi',
+            'movements.view' => 'Melihat Menu & Riwayat Mutasi',
             'movements.create' => 'Mengajukan Mutasi Barang',
             'movements.approve' => 'Menyetujui Mutasi Barang',
             'movements.reject' => 'Menolak Mutasi Barang',
             'movements.complete' => 'Menyelesaikan Mutasi Barang',
-            // Status
-            'status.view' => 'Melihat Status & Kondisi',
+            // Status & Approval
+            'status.view' => 'Melihat Menu Approval Request & Status',
             'status.update' => 'Mengubah Status / Kondisi',
-            'status.approve' => 'Menyetujui Perubahan Status',
+            'status.approve' => 'Menyetujui Approval Request & Perubahan Status',
             // Stock Opname
-            'stock_opname.view' => 'Melihat Sesi Stock Opname',
+            'stock_opname.view' => 'Melihat Menu & Sesi Stock Opname',
             'stock_opname.create' => 'Membuat Sesi Stock Opname',
             'stock_opname.update' => 'Memperbarui Item Stock Opname',
             'stock_opname.complete' => 'Menyelesaikan Stock Opname',
             // Barcode & QR
             'asset_qr.view' => 'Melihat Barcode / QR Code',
             'asset_qr.generate' => 'Mencetak Barcode & Checklist',
-            'asset_scanner.use' => 'Menggunakan Fitur Scanner',
+            'asset_scanner.use' => 'Menggunakan Fitur Scanner Aset',
             // Financial
             'financial.view' => 'Melihat Harga Beli & Informasi Finansial',
             'financial.update' => 'Mengubah Data Keuangan / Nilai Perolehan',
             'financial.export' => 'Ekspor Data Finansial',
+            // Transactions
+            'transactions.pembelian.view' => 'Melihat Menu Transaksi Pembelian',
+            'transactions.penjualan.view' => 'Melihat Menu Transaksi Penjualan',
             // Reports
-            'reports.view' => 'Melihat Halaman Laporan',
+            'reports.view' => 'Melihat Menu Laporan Aset',
+            'reports.rekapitulasi.view' => 'Melihat Menu Rekapitulasi Barang',
             'reports.export' => 'Ekspor Laporan (Excel/PDF)',
             // Audit
             'audit.view' => 'Melihat Log Audit Aktivitas',

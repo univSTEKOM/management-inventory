@@ -35,7 +35,7 @@ class ItemRecapitulationTest extends TestCase
     private function authorizeReports(): void
     {
         $user = User::factory()->create();
-        $user->permissions()->attach(Permission::firstOrCreate(['name' => 'reports.view'])->id);
+        $user->permissions()->attach(Permission::firstOrCreate(['name' => 'reports.rekapitulasi.view'])->id);
         $this->actingAs($user);
     }
 

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use App\Models\Asset;
 use App\Models\User;
@@ -24,6 +25,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Pastikan folder temporary Livewire upload selalu ada.
+        if (! app()->runningUnitTests()) {
+            Storage::disk('local')->makeDirectory(
+                config('livewire.temporary_file_upload.directory') ?: 'livewire-tmp'
+            );
+        }
+
         \Illuminate\Support\Facades\Event::subscribe(\App\Listeners\AuthEventsSubscriber::class);
         \App\Models\User::observe(\App\Observers\UserObserver::class);
         
