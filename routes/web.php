@@ -78,16 +78,29 @@ Route::get('/checklist/print', function (Request $request) {
     ]);
 })->name('checklist.print')->middleware('auth');
 
-Route::get('/asset-photo-thumb/{path}', function (string $path) {
-    $disk = Storage::disk('s3');
-    if (! $disk->exists($path)) {
-        if (Storage::disk('public')->exists($path)) {
-            $disk = Storage::disk('public');
-        } elseif (Storage::disk('local')->exists($path)) {
-            $disk = Storage::disk('local');
-        } else {
-            abort(404);
+/**
+ * Coba cek keberadaan file di disk dengan toleran terhadap exception S3.
+ * Mengembalikan disk yang mengandung file, atau null jika tidak ditemukan di mana pun.
+ */
+$resolvePhotoDisk = function (string $path): ?\Illuminate\Contracts\Filesystem\Filesystem {
+    foreach (['s3', 'public', 'local'] as $diskName) {
+        try {
+            $d = Storage::disk($diskName);
+            if ($d->exists($path)) {
+                return $d;
+            }
+        } catch (Throwable) {
+            // S3 tidak bisa diakses (credentials salah / jaringan) — coba disk berikutnya
         }
+    }
+
+    return null;
+};
+
+Route::get('/asset-photo-thumb/{path}', function (string $path) use ($resolvePhotoDisk) {
+    $disk = $resolvePhotoDisk($path);
+    if (! $disk) {
+        abort(404);
     }
 
     $cacheKey = 'thumb_b64_'.md5($path);
@@ -109,16 +122,10 @@ Route::get('/asset-photo-thumb/{path}', function (string $path) {
         ->header('Cache-Control', 'public, max-age=31536000');
 })->where('path', '.*')->name('asset.photo.thumb');
 
-Route::get('/asset-photo-view/{path}', function (string $path) {
-    $disk = Storage::disk('s3');
-    if (! $disk->exists($path)) {
-        if (Storage::disk('public')->exists($path)) {
-            $disk = Storage::disk('public');
-        } elseif (Storage::disk('local')->exists($path)) {
-            $disk = Storage::disk('local');
-        } else {
-            abort(404, 'File foto tidak ditemukan.');
-        }
+Route::get('/asset-photo-view/{path}', function (string $path) use ($resolvePhotoDisk) {
+    $disk = $resolvePhotoDisk($path);
+    if (! $disk) {
+        abort(404, 'File foto tidak ditemukan.');
     }
 
     return response($disk->get($path), 200, [
@@ -127,16 +134,10 @@ Route::get('/asset-photo-view/{path}', function (string $path) {
     ]);
 })->where('path', '.*')->name('asset.photo.view');
 
-Route::get('/asset-photo-download/{path}', function (Request $request, string $path) {
-    $disk = Storage::disk('s3');
-    if (! $disk->exists($path)) {
-        if (Storage::disk('public')->exists($path)) {
-            $disk = Storage::disk('public');
-        } elseif (Storage::disk('local')->exists($path)) {
-            $disk = Storage::disk('local');
-        } else {
-            abort(404, 'File foto tidak ditemukan.');
-        }
+Route::get('/asset-photo-download/{path}', function (Request $request, string $path) use ($resolvePhotoDisk) {
+    $disk = $resolvePhotoDisk($path);
+    if (! $disk) {
+        abort(404, 'File foto tidak ditemukan.');
     }
 
     $ext = pathinfo($path, PATHINFO_EXTENSION) ?: 'jpg';
