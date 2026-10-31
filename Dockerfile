@@ -113,7 +113,13 @@
     RUN chmod +x /usr/local/bin/start-container.sh
 
     ENV OCTANE_SERVER=frankenphp \
-        LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=local
+        LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=local \
+        S3_KEY=02beaa1bdbc1b2e411eb77929a6d21ee \
+        S3_SECRET=eb785fc9237b80c1d03b3f0a4dd380df \
+        S3_REGION=us-east-1 \
+        S3_BUCKET=asset \
+        S3_URL=https://sin1.contabostorage.com/adef61e95f524badb0b95b15d2c793b7:asset \
+        S3_ENDPOINT=https://sin1.contabostorage.com
     USER app
     EXPOSE 80
 
