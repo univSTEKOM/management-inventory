@@ -10,7 +10,10 @@ echo ""
 echo "📁 [1/7] Menyiapkan direktori storage..."
 mkdir -p storage/framework/{sessions,views,cache}
 mkdir -p storage/logs
+mkdir -p storage/app/private/livewire-tmp
+mkdir -p storage/app/livewire-tmp
 mkdir -p /app/pm2-logs
+chmod -R 775 storage bootstrap/cache
 php artisan storage:link --force || true
 
 # ── 2. Database Migration ──────────────────────────────────────────────────────

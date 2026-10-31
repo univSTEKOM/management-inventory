@@ -3,6 +3,7 @@
 namespace App\Filament\Inventory\Pages;
 
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Auth;
 
 class TransaksiPenjualan extends Page
 {
@@ -27,8 +28,8 @@ class TransaksiPenjualan extends Page
     
     protected string $view = 'filament.pages.transaksi-penjualan';
     
-    public static function shouldRegisterNavigation(): bool
+    public static function canAccess(): bool
     {
-        return true;
+        return Auth::user()?->hasPermissionTo('transactions.penjualan.view') ?? false;
     }
 }

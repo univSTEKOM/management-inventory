@@ -4,6 +4,7 @@ namespace App\Filament\Inventory\Resources;
 
 use App\Filament\Inventory\Resources\AssetResource\Pages;
 use App\Filament\Support\AddPhotoActions;
+use App\Filament\Support\ChangeBrandActions;
 use App\Filament\Support\ChangeCategoryActions;
 use App\Filament\Support\ChangeKondisiActions;
 use App\Filament\Support\ChangeStatusActions;
@@ -298,9 +299,22 @@ class AssetResource extends Resource
                             Components\FileUpload::make('invoice_document')
                                 ->disk('s3')
                                 ->label('Dokumen Invoice / Nota')
-                                ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'])
-                                ->maxSize(5120) // 5MB
+                                ->acceptedFileTypes([
+                                    'application/pdf',
+                                    'application/x-pdf',
+                                    'image/jpeg',
+                                    'image/png',
+                                    'image/webp',
+                                    'image/heic',
+                                    'image/heif',
+                                ])
+                                ->maxSize(10240) // 10MB
+                                ->imageResizeMode('contain')
+                                ->imageResizeTargetWidth('2000')
+                                ->imageResizeTargetHeight('2000')
                                 ->directory('invoice-documents')
+                                ->openable()
+                                ->downloadable()
                                 ->columnSpanFull(),
                         ])->columnSpan(['default' => 1, 'md' => 1]),
                     ])
@@ -872,6 +886,7 @@ class AssetResource extends Resource
                 AddPhotoActions::bulkAction(),
                 MoveLocationActions::bulkAction(),
                 ChangeCategoryActions::bulkAction(),
+                ChangeBrandActions::bulkAction(),
                 ChangeStatusActions::bulkAction(),
                 ChangeKondisiActions::bulkAction(),
                 DeleteItemsActions::bulkAction(),

@@ -30,12 +30,14 @@ class AssetScanner extends Page implements HasForms
     
     protected ?string $subheading = 'Scan barcode untuk menemukan aset.';
 
+    public static function canAccess(): bool
+    {
+        return Auth::user()?->hasPermissionTo('asset_scanner.use') ?? false;
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
-        /** @var \App\Models\User|null $user */
-        $user = Auth::user();
-        
-        return $user ? $user->hasPermissionTo('asset_scanner.use') : false;
+        return static::canAccess();
     }
 
     public function mount()

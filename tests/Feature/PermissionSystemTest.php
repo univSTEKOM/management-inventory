@@ -2,6 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Inventory\Pages\AssetScanner;
+use App\Filament\Inventory\Pages\ItemRecapitulation;
+use App\Filament\Inventory\Pages\TransaksiPembelian;
+use App\Filament\Inventory\Pages\TransaksiPenjualan;
 use App\Filament\Inventory\Resources\AntrianBarangMasukResource;
 use App\Filament\Inventory\Resources\AssetMovementResource;
 use App\Filament\Inventory\Resources\AssetResource;
@@ -276,6 +280,132 @@ class PermissionSystemTest extends TestCase
         $pAssets = Permission::where('name', 'assets.view')->firstOrFail();
         $user->permissions()->attach($pAssets->id, ['type' => 'deny']);
         $this->assertEquals('deny', $user->fresh()->effectivePermissionStatus('assets.view'));
+    }
+    public function test_category_cards_follow_independent_permissions_and_financial_access()
+    {
+        $role = Role::where('name', 'Finance')->firstOrFail();
+        $user = User::factory()->create();
+        $user->roles()->attach($role->id);
+        $widgetClass = \App\Filament\Inventory\Resources\Widgets\CategoryAssetStatsWidget::class;
+        $method = new \ReflectionMethod($widgetClass, 'getStats');
+
+        // Dashboard overrides must not affect cards in the category menus.
+        foreach (['dashboard.widget.total_assets', 'dashboard.widget.asset_acquisition_value'] as $name) {
+            $permission = Permission::where('name', $name)->firstOrFail();
+            $user->permissions()->attach($permission->id, ['type' => 'deny']);
+        }
+
+        $cases = [
+            [true, true, true, ['Total Barang', 'Total Harga Perolehan']],
+            [false, true, true, ['Total Harga Perolehan']],
+            [true, false, true, ['Total Barang']],
+            [false, false, true, []],
+            [true, true, false, ['Total Barang']],
+            [false, true, false, []],
+        ];
+
+        foreach ($cases as [$items, $price, $financial, $expected]) {
+            foreach ([
+                'assets.widget.total_items' => $items,
+                'assets.widget.acquisition_value' => $price,
+                'financial.view' => $financial,
+            ] as $name => $allowed) {
+                $permission = Permission::where('name', $name)->firstOrFail();
+                $user->permissions()->syncWithoutDetaching([
+                    $permission->id => ['type' => $allowed ? 'allow' : 'deny'],
+                ]);
+            }
+
+            $this->actingAs($user->fresh());
+            $this->assertSame($expected !== [], $widgetClass::canView());
+
+            foreach (['aset', 'inventaris'] as $slug) {
+                $widget = new $widgetClass;
+                $widget->categorySlug = $slug;
+                $stats = $method->invoke($widget);
+                $this->assertSame($expected, array_map(fn ($stat) => $stat->getLabel(), $stats));
+            }
+        }
+    }
+
+    public function test_category_cards_are_hidden_for_guests_and_users_without_permissions()
+    {
+        $widgetClass = \App\Filament\Inventory\Resources\Widgets\CategoryAssetStatsWidget::class;
+        $method = new \ReflectionMethod($widgetClass, 'getStats');
+
+        $this->assertFalse($widgetClass::canView());
+        $this->assertSame([], $method->invoke(new $widgetClass));
+
+        $this->actingAs(User::factory()->create());
+        $this->assertFalse($widgetClass::canView());
+        $this->assertSame([], $method->invoke(new $widgetClass));
+    }
+
+    public function test_transaksi_pages_can_access_enforces_permissions()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Awalnya ditolak (tidak ada permission)
+        $this->assertFalse(TransaksiPembelian::canAccess());
+        $this->assertFalse(TransaksiPenjualan::canAccess());
+
+        // Berikan transactions.pembelian.view
+        $permPembelian = Permission::where('name', 'transactions.pembelian.view')->firstOrFail();
+        $user->permissions()->attach($permPembelian->id, ['type' => 'allow']);
+
+        $this->assertTrue(TransaksiPembelian::canAccess());
+        $this->assertFalse(TransaksiPenjualan::canAccess());
+
+        // Berikan transactions.penjualan.view
+        $permPenjualan = Permission::where('name', 'transactions.penjualan.view')->firstOrFail();
+        $user->permissions()->attach($permPenjualan->id, ['type' => 'allow']);
+
+        $this->assertTrue(TransaksiPembelian::canAccess());
+        $this->assertTrue(TransaksiPenjualan::canAccess());
+    }
+
+    public function test_rekapitulasi_and_intake_pages_can_access_enforces_permissions()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Awalnya ditolak
+        $this->assertFalse(ItemRecapitulation::canAccess());
+        $this->assertFalse(AntrianBarangMasukResource::canAccess());
+        $this->assertFalse(AssetScanner::canAccess());
+
+        // Berikan reports.rekapitulasi.view
+        $permRecap = Permission::where('name', 'reports.rekapitulasi.view')->firstOrFail();
+        $user->permissions()->attach($permRecap->id, ['type' => 'allow']);
+        $this->assertTrue(ItemRecapitulation::canAccess());
+
+        // Berikan intake.view
+        $permIntake = Permission::where('name', 'intake.view')->firstOrFail();
+        $user->permissions()->attach($permIntake->id, ['type' => 'allow']);
+        $this->assertTrue(AntrianBarangMasukResource::canAccess());
+
+        // Berikan asset_scanner.use
+        $permScanner = Permission::where('name', 'asset_scanner.use')->firstOrFail();
+        $user->permissions()->attach($permScanner->id, ['type' => 'allow']);
+        $this->assertTrue(AssetScanner::canAccess());
+    }
+
+    public function test_bulk_edit_brand_permission_authorization()
+    {
+        $superadmin = User::factory()->create();
+        $superadminRole = Role::firstOrCreate(['name' => 'Superadmin']);
+        $superadmin->roles()->attach($superadminRole->id);
+
+        $regularUser = User::factory()->create();
+
+        $this->assertTrue(\App\Filament\Support\ChangeBrandActions::userCanBulkEdit($superadmin));
+        $this->assertFalse(\App\Filament\Support\ChangeBrandActions::userCanBulkEdit($regularUser));
+
+        $perm = Permission::where('name', 'assets.bulk_edit_brand')->firstOrFail();
+        $regularUser->permissions()->attach($perm->id, ['type' => 'allow']);
+
+        $this->assertTrue(\App\Filament\Support\ChangeBrandActions::userCanBulkEdit($regularUser->fresh()));
     }
 }
 

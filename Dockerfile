@@ -112,7 +112,8 @@
     COPY --chown=app:app start-container.sh /usr/local/bin/start-container.sh
     RUN chmod +x /usr/local/bin/start-container.sh
 
-    ENV OCTANE_SERVER=frankenphp
+    ENV OCTANE_SERVER=frankenphp \
+        LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=local
     USER app
     EXPOSE 80
 

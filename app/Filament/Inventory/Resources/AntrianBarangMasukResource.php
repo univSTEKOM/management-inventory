@@ -83,7 +83,10 @@ class AntrianBarangMasukResource extends Resource
 
     public static function canAccess(): bool
     {
-        return Auth::check() && (Auth::user()->hasPermissionTo('intake.complete') || Auth::user()->hasPermissionTo('assets.view'));
+        return Auth::check() && (
+            Auth::user()->hasPermissionTo('intake.view') ||
+            Auth::user()->hasPermissionTo('intake.complete')
+        );
     }
 
     /**
