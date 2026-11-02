@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Drivers\Gd\Driver as GdDriver;
+use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\ImageManager;
 
@@ -103,19 +104,38 @@ Route::get('/asset-photo-thumb/{path}', function (string $path) use ($resolvePho
         abort(404);
     }
 
-    $cacheKey = 'thumb_b64_'.md5($path);
+    $cacheKey = 'thumb_b64_v2_'.md5($path);
     $base64Data = Cache::rememberForever($cacheKey, function () use ($disk, $path) {
-        try {
-            $manager = new ImageManager(new Driver);
-            $image = $manager->decode($disk->get($path));
-            $image->scaleDown(width: 400);
-            $raw = (string) $image->encode(new JpegEncoder(quality: 75));
+        $bytes = $disk->get($path);
 
-            return base64_encode($raw);
-        } catch (Throwable $e) {
-            return base64_encode($disk->get($path));
+        // Coba Imagick dulu (support HEIC, AVIF, WebP), fallback ke GD
+        $driver = class_exists('Imagick') ? new ImagickDriver : new GdDriver;
+        try {
+            $manager = new ImageManager($driver);
+            $image   = $manager->decode($bytes);
+            $image->scaleDown(width: 400);
+
+            return base64_encode((string) $image->encode(new JpegEncoder(quality: 75)));
+        } catch (Throwable) {
+            // Gambar format tidak dikenal — coba GD sebagai last resort
+            try {
+                $manager = new ImageManager(new GdDriver);
+                $image   = $manager->decode($bytes);
+                $image->scaleDown(width: 400);
+
+                return base64_encode((string) $image->encode(new JpegEncoder(quality: 75)));
+            } catch (Throwable) {
+                // Tidak bisa diproses sama sekali — kembalikan null agar tidak dicache
+                return null;
+            }
         }
     });
+
+    if (! $base64Data) {
+        // Hapus cache entry yang null agar dicoba lagi nanti
+        Cache::forget($cacheKey);
+        abort(422, 'Format foto tidak didukung.');
+    }
 
     return response(base64_decode($base64Data), 200)
         ->header('Content-Type', 'image/jpeg')
@@ -128,8 +148,26 @@ Route::get('/asset-photo-view/{path}', function (string $path) use ($resolvePhot
         abort(404, 'File foto tidak ditemukan.');
     }
 
-    return response($disk->get($path), 200, [
-        'Content-Type' => $disk->mimeType($path) ?: 'image/jpeg',
+    $bytes = $disk->get($path);
+
+    // Detect MIME type dari konten aktual file (lebih akurat dari S3 metadata)
+    $finfo    = new \finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->buffer($bytes) ?: ($disk->mimeType($path) ?: 'image/jpeg');
+
+    // Browser tidak bisa render HEIC/AVIF secara native — konversi ke JPEG
+    if (in_array($mimeType, ['image/heic', 'image/heif', 'image/avif'])) {
+        try {
+            $driver  = class_exists('Imagick') ? new ImagickDriver : new GdDriver;
+            $manager = new ImageManager($driver);
+            $bytes   = (string) $manager->decode($bytes)->encode(new JpegEncoder(quality: 85));
+            $mimeType = 'image/jpeg';
+        } catch (Throwable) {
+            // Biarkan bytes asli dikirim jika konversi gagal
+        }
+    }
+
+    return response($bytes, 200, [
+        'Content-Type'  => $mimeType,
         'Cache-Control' => 'public, max-age=31536000',
     ]);
 })->where('path', '.*')->name('asset.photo.view');
