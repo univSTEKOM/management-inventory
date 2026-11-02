@@ -48,6 +48,7 @@ enum AuditAction: string
     case USER_DISABLED = 'user_disabled';
     case ROLE_CHANGED = 'role_changed';
     case PERMISSION_CHANGED = 'permission_changed';
+    case PERMISSION_OVERRIDE_UPDATED = 'permission_override_updated';
 
     public function label(): string
     {
