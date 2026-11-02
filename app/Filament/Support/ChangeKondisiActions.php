@@ -4,6 +4,7 @@ namespace App\Filament\Support;
 
 use App\Models\Asset;
 use App\Models\InventoryBalance;
+use App\Models\User;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -14,6 +15,16 @@ use Illuminate\Support\Facades\DB;
 
 class ChangeKondisiActions
 {
+    public static function userCanBulkChangeKondisi(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+        return $user->hasRole('Superadmin')
+            || $user->hasRole('superadmin')
+            || $user->hasPermissionTo('assets.bulk_change_kondisi');
+    }
+
     public static function bulkAction(): BulkAction
     {
         return BulkAction::make('changeKondisiBulk')
@@ -22,8 +33,8 @@ class ChangeKondisiActions
             ->tooltip('Ubah Kondisi')
             ->icon('heroicon-o-wrench-screwdriver')
             ->color('info')
-            ->visible(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
-            ->authorize(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
+            ->visible(fn () => static::userCanBulkChangeKondisi(Auth::user()))
+            ->authorize(fn () => static::userCanBulkChangeKondisi(Auth::user()))
             ->modalHeading('Ubah Kondisi Barang')
             ->modalDescription('Mengubah kondisi untuk semua barang yang dipilih. Khusus Aset.')
             ->modalWidth('md')

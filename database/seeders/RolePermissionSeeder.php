@@ -15,6 +15,8 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             // Asset
             'assets.view', 'assets.create', 'assets.update', 'assets.delete', 'assets.bulk_edit_brand',
+            'assets.bulk_change_category', 'assets.bulk_change_kondisi', 'assets.bulk_change_status',
+            'assets.bulk_move_location', 'assets.bulk_print_checklist', 'assets.bulk_print_barcode',
             'assets.widget.total_items', 'assets.widget.acquisition_value',
             // Supplies (Barang Habis Pakai)
             'supplies.stock_in', 'supplies.update',
@@ -72,6 +74,8 @@ class RolePermissionSeeder extends Seeder
                 'panel.inventory',
                 'assets.widget.total_items',
                 'assets.view', 'assets.create', 'assets.update',
+                'assets.bulk_edit_brand',
+                'assets.bulk_print_checklist', 'assets.bulk_print_barcode',
                 'supplies.stock_in', 'supplies.update',
                 'intake.view',
                 'categories.view', 'categories.create', 'categories.update',

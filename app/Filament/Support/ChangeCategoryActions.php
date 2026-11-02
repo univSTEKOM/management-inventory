@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Classification;
 use App\Models\InventoryBalance;
+use App\Models\User;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -27,16 +28,26 @@ use Illuminate\Support\Facades\DB;
  */
 class ChangeCategoryActions
 {
+    public static function userCanBulkChangeCategory(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+        return $user->hasRole('Superadmin')
+            || $user->hasRole('superadmin')
+            || $user->hasPermissionTo('assets.bulk_change_category');
+    }
+
     public static function bulkAction(): BulkAction
     {
         return BulkAction::make('changeCategoryBulk')
             ->label('Ganti Kategori')
-            ->hiddenLabel(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
-            ->tooltip(fn () => (Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')) ? 'Ganti Kategori' : null)
+            ->hiddenLabel(fn () => static::userCanBulkChangeCategory(Auth::user()))
+            ->tooltip(fn () => static::userCanBulkChangeCategory(Auth::user()) ? 'Ganti Kategori' : null)
             ->icon('heroicon-o-tag')
             ->color('warning')
-            ->visible(fn () => Auth::user()?->hasRole('Superadmin') ?? false)
-            ->authorize(fn () => Auth::user()?->hasRole('Superadmin') ?? false)
+            ->visible(fn () => static::userCanBulkChangeCategory(Auth::user()))
+            ->authorize(fn () => static::userCanBulkChangeCategory(Auth::user()))
             ->modalHeading('Ganti Kategori (Koreksi Data)')
             ->modalDescription('Untuk memperbaiki kategori yang keliru. Klasifikasi dan Kode Barang tidak berubah. Stok BHP yang jadi identik (kategori, nama, merk, ruangan) akan DIGABUNG dan tidak bisa dibatalkan.')
             ->modalWidth('lg')

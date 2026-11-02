@@ -5,6 +5,7 @@ namespace App\Filament\Support;
 use App\Models\Asset;
 use App\Models\Campus;
 use App\Models\Location;
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
@@ -20,6 +21,16 @@ use Illuminate\Support\Facades\Auth;
  */
 class PrintChecklistActions
 {
+    public static function userCanBulkPrintChecklist(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+        return $user->hasRole('Superadmin')
+            || $user->hasRole('superadmin')
+            || $user->hasPermissionTo('assets.bulk_print_checklist');
+    }
+
     /**
      * Tombol bulk (checkbox pilih-banyak baris di tabel). Menerima Asset
      * langsung (AssetResource/BaseCategoryAssetResource) atau UnifiedItem
@@ -30,10 +41,12 @@ class PrintChecklistActions
     {
         return BulkAction::make('printChecklistBulk')
             ->label('Cetak Checklist')
-            ->hiddenLabel(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
-            ->tooltip(fn () => (Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')) ? 'Cetak Checklist' : null)
+            ->hiddenLabel(fn () => static::userCanBulkPrintChecklist(Auth::user()))
+            ->tooltip(fn () => static::userCanBulkPrintChecklist(Auth::user()) ? 'Cetak Checklist' : null)
             ->icon('heroicon-o-clipboard-document-check')
             ->color('gray')
+            ->visible(fn () => static::userCanBulkPrintChecklist(Auth::user()))
+            ->authorize(fn () => static::userCanBulkPrintChecklist(Auth::user()))
             ->url(fn (Collection $records) => route('checklist.print', ['ids' => implode(',', static::resolveAssetIds($records))]))
             ->openUrlInNewTab()
             ->deselectRecordsAfterCompletion();

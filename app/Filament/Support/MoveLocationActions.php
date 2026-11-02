@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Campus;
 use App\Models\InventoryBalance;
 use App\Models\Location;
+use App\Models\User;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
@@ -25,16 +26,26 @@ use Illuminate\Support\Facades\Auth;
  */
 class MoveLocationActions
 {
+    public static function userCanBulkMoveLocation(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+        return $user->hasRole('Superadmin')
+            || $user->hasRole('superadmin')
+            || $user->hasPermissionTo('assets.bulk_move_location');
+    }
+
     public static function bulkAction(): BulkAction
     {
         return BulkAction::make('moveLocationBulk')
             ->label('Pindah Ruangan')
-            ->hiddenLabel(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
-            ->tooltip(fn () => (Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')) ? 'Pindah Ruangan' : null)
+            ->hiddenLabel(fn () => static::userCanBulkMoveLocation(Auth::user()))
+            ->tooltip(fn () => static::userCanBulkMoveLocation(Auth::user()) ? 'Pindah Ruangan' : null)
             ->icon('heroicon-o-arrow-right-circle')
             ->color('warning')
-            ->visible(fn () => Auth::user()?->hasRole('Superadmin') ?? false)
-            ->authorize(fn () => Auth::user()?->hasRole('Superadmin') ?? false)
+            ->visible(fn () => static::userCanBulkMoveLocation(Auth::user()))
+            ->authorize(fn () => static::userCanBulkMoveLocation(Auth::user()))
             ->modalHeading('Pindah Ruangan (Koreksi Data)')
             ->modalDescription('Untuk memperbaiki data lokasi yang keliru tanpa proses mutasi. Perubahan tetap tercatat di riwayat lokasi. Stok BHP yang sama (kategori, nama, merk) di ruangan tujuan akan DIGABUNG dan tidak bisa dibatalkan.')
             ->modalWidth('lg')
