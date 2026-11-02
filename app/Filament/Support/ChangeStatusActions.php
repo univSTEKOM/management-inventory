@@ -4,6 +4,7 @@ namespace App\Filament\Support;
 
 use App\Models\Asset;
 use App\Models\InventoryBalance;
+use App\Models\User;
 use Filament\Actions\BulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -14,6 +15,16 @@ use Illuminate\Support\Facades\DB;
 
 class ChangeStatusActions
 {
+    public static function userCanBulkChangeStatus(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+        return $user->hasRole('Superadmin')
+            || $user->hasRole('superadmin')
+            || $user->hasPermissionTo('assets.bulk_change_status');
+    }
+
     public static function bulkAction(): BulkAction
     {
         return BulkAction::make('changeStatusBulk')
@@ -22,9 +33,9 @@ class ChangeStatusActions
             ->tooltip('Ubah Status')
             ->icon('heroicon-o-arrow-path-rounded-square')
             ->color('warning')
-            // Only show for superadmin
-            ->visible(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
-            ->authorize(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
+            // Only show for superadmin or users with permission
+            ->visible(fn () => static::userCanBulkChangeStatus(Auth::user()))
+            ->authorize(fn () => static::userCanBulkChangeStatus(Auth::user()))
             ->modalHeading('Ubah Status Barang')
             ->modalDescription('Mengubah status untuk semua barang yang dipilih. Khusus Aset.')
             ->modalWidth('md')

@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Campus;
 use App\Models\Location;
 use App\Models\PrinterStation;
+use App\Models\User;
 use App\Services\BarcodeService;
 use App\Services\PrintQueueService;
 use Filament\Actions\Action;
@@ -31,6 +32,16 @@ use Illuminate\Support\HtmlString;
  */
 class PrintBarcodeActions
 {
+    public static function userCanBulkPrintBarcode(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+        return $user->hasRole('Superadmin')
+            || $user->hasRole('superadmin')
+            || $user->hasPermissionTo('assets.bulk_print_barcode');
+    }
+
     protected static function stationSelect(string $helperText): Select
     {
         return Select::make('printer_station')
@@ -94,11 +105,11 @@ class PrintBarcodeActions
     {
         return BulkAction::make('queuePrintLabelBulk')
             ->label('Cetak Barcode')
-            ->hiddenLabel(fn () => Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin'))
-            ->tooltip(fn () => (Auth::user()?->hasRole('superadmin') || Auth::user()?->hasRole('Superadmin')) ? 'Cetak Barcode' : null)
+            ->hiddenLabel(fn () => static::userCanBulkPrintBarcode(Auth::user()))
+            ->tooltip(fn () => static::userCanBulkPrintBarcode(Auth::user()) ? 'Cetak Barcode' : null)
             ->icon('heroicon-o-printer')
             ->color('primary')
-            ->visible(fn () => PrinterStation::exists())
+            ->visible(fn () => static::userCanBulkPrintBarcode(Auth::user()) && PrinterStation::exists())
             ->form([
                 static::stationSelect('Semua label diantre bareng, otomatis ke-pair 2 per baris sesuai urutan.'),
             ])
