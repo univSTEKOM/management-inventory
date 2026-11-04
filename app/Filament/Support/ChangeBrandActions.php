@@ -52,20 +52,22 @@ class ChangeBrandActions
                     ->label('Merk / Tipe')
                     ->placeholder('Pilih dari daftar merk atau tambah baru...')
                     ->searchable()
-                    ->preload()
-                    ->options(function () {
+                    ->getSearchResultsUsing(function (string $search) {
                         $assetBrands = Asset::whereNotNull('brand')
                             ->where('brand', '<>', '')
+                            ->where('brand', 'like', "%{$search}%")
                             ->distinct()
                             ->pluck('brand', 'brand');
 
                         $balanceBrands = InventoryBalance::whereNotNull('brand')
                             ->where('brand', '<>', '')
+                            ->where('brand', 'like', "%{$search}%")
                             ->distinct()
                             ->pluck('brand', 'brand');
 
                         return $assetBrands->merge($balanceBrands)->sort()->all();
                     })
+                    ->getOptionLabelUsing(fn ($value) => $value)
                     ->createOptionForm([
                         TextInput::make('brand')
                             ->label('Merk / Tipe Baru')
