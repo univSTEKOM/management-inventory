@@ -94,7 +94,7 @@ class RoleResource extends Resource
                     ->schema([
                         Components\CheckboxList::make(static::permissionGroupFieldName($group))
                             ->hiddenLabel()
-                            ->options($permissions->pluck('name', 'id')->all())
+                            ->options($permissions->mapWithKeys(fn (Permission $p): array => [$p->id => \App\Filament\Resources\UserResource::friendlyPermissionLabel($p->name)])->all())
                             ->columns(2)
                             ->bulkToggleable(),
                     ]);

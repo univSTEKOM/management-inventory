@@ -237,7 +237,7 @@ class UserResource extends Resource
                     ->schema([
                         Components\CheckboxList::make(static::permissionGroupFieldName($group))
                             ->hiddenLabel()
-                            ->options($permissions->pluck('name', 'id')->all())
+                            ->options($permissions->mapWithKeys(fn (Permission $p): array => [$p->id => static::friendlyPermissionLabel($p->name)])->all())
                             ->descriptions(
                                 $permissions->pluck('id')
                                     ->mapWithKeys(fn (int $id): array => [$id => $viaRoles->has($id) ? "Sudah aktif via role: {$viaRoles->get($id)}" : null])
