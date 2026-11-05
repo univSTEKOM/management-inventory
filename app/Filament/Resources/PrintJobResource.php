@@ -32,7 +32,7 @@ class PrintJobResource extends Resource
 
     public static function getNavigationGroup(): string | \UnitEnum | null
     {
-        return 'System Administration';
+        return 'Asset Management';
     }
 
     public static function getNavigationSort(): ?int
