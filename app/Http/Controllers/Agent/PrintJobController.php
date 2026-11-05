@@ -14,6 +14,18 @@ class PrintJobController extends Controller
         $station = $request->attributes->get('printer_station');
 
         $jobs = DB::transaction(function () use ($station) {
+            // Auto-recover: job yang stuck di 'processing' lebih dari 5 menit
+            // (terjadi kalau agent crash / di-Ctrl+C sebelum sempat lapor complete/fail)
+            // di-reset ke 'pending' supaya bisa dicetak lagi di poll berikutnya.
+            PrintJob::where('printer_station', $station->station_key)
+                ->where('status', 'processing')
+                ->where('updated_at', '<', now()->subMinutes(5))
+                ->update([
+                    'status'        => 'pending',
+                    'attempts'      => DB::raw('attempts + 1'),
+                    'error_message' => 'Auto-recovered: agent tidak merespons > 5 menit.',
+                ]);
+
             $jobs = PrintJob::where('printer_station', $station->station_key)
                 ->where('status', 'pending')
                 ->orderBy('id')
