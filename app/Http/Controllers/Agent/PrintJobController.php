@@ -33,7 +33,9 @@ class PrintJobController extends Controller
                 ->lockForUpdate()
                 ->get();
 
-            PrintJob::whereIn('id', $jobs->pluck('id'))->update(['status' => 'processing']);
+            if ($jobs->isNotEmpty()) {
+                PrintJob::whereIn('id', $jobs->pluck('id'))->update(['status' => 'processing']);
+            }
 
             return $jobs;
         });

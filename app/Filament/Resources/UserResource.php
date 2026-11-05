@@ -171,6 +171,9 @@ class UserResource extends Resource
             'asset_qr.view' => 'Melihat Barcode / QR Code',
             'asset_qr.generate' => 'Mencetak Barcode & Checklist',
             'asset_scanner.use' => 'Menggunakan Fitur Scanner Aset',
+            'print_jobs.view' => 'Melihat Antrean & Riwayat Cetak Barcode',
+            'print_jobs.retry' => 'Mencetak Ulang / Retry Antrean Barcode',
+            'print_jobs.delete' => 'Membatalkan / Menghapus Antrean Barcode',
             // Financial
             'financial.view' => 'Melihat Harga Beli & Informasi Finansial',
             'financial.update' => 'Mengubah Data Keuangan / Nilai Perolehan',
