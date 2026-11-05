@@ -188,7 +188,7 @@ class AntrianBarangMasukResource extends Resource
                         Components\Placeholder::make('status')
                             ->label('Status')
                             ->content(fn (?Asset $record) => match ($record?->status) {
-                                'stock' => 'Stok (Gudang)',
+                                'stock' => 'Tersedia',
                                 'active' => 'Aktif / Digunakan',
                                 'borrowed' => 'Dipinjam',
                                 'maintenance' => 'Dalam Perbaikan',

@@ -133,7 +133,7 @@ class UnifiedItemResource extends Resource
                     ->toggleable()
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'stock' => 'Stok (Gudang)',
+                        'stock', 'available' => 'Tersedia',
                         'active' => 'Aktif / Digunakan',
                         'borrowed' => 'Dipinjam',
                         'maintenance' => 'Dalam Perbaikan',
@@ -212,8 +212,8 @@ class UnifiedItemResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'stock' => 'Stok (Gudang)',
-                        'available' => 'Tersedia',
+                        'stock' => 'Tersedia',
+                        'available' => 'Tersedia (Habis Pakai)',
                         'active' => 'Aktif / Digunakan',
                         'borrowed' => 'Dipinjam',
                         'maintenance' => 'Dalam Perbaikan',

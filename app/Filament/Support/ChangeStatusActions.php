@@ -43,7 +43,7 @@ class ChangeStatusActions
                 Select::make('new_status')
                     ->label('Status Baru')
                     ->options([
-                        'stock'                    => 'Stok (Gudang)',
+                        'stock'                    => 'Tersedia',
                         'active'                   => 'Aktif / Digunakan',
                         'borrowed'                 => 'Dipinjam',
                         'maintenance'              => 'Dalam Perbaikan',

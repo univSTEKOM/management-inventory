@@ -78,7 +78,7 @@ class AssetScanner extends Page implements HasForms
                 Components\Select::make('status')
                     ->label('Status')
                     ->options([
-                        'stock'               => 'Stok (Gudang)',
+                        'stock'               => 'Tersedia',
                         'active'              => 'Aktif / Digunakan',
                         'borrowed'            => 'Dipinjam',
                         'maintenance'         => 'Dalam Perbaikan',

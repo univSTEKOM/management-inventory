@@ -174,6 +174,11 @@ class ManagePermissions extends EditRecord
                 'description' => 'Penentuan panel mana yang dapat dibuka (Admin atau Inventory).',
                 'icon' => 'heroicon-o-shield-check',
             ],
+            'other' => [
+                'label' => 'Hak Akses Lainnya',
+                'description' => 'Izin modul dan fitur sistem tambahan.',
+                'icon' => 'heroicon-o-ellipsis-horizontal-circle',
+            ],
         ];
 
         // Kelompokkan permission ke kategori yang ditentukan
@@ -187,7 +192,7 @@ class ManagePermissions extends EditRecord
             if (str_starts_with($name, 'movements.')) return 'movements';
             if (str_starts_with($name, 'status.')) return 'status';
             if (str_starts_with($name, 'stock_opname.')) return 'stock_opname';
-            if (str_starts_with($name, 'asset_qr.') || str_starts_with($name, 'asset_scanner.')) return 'asset_qr';
+            if (str_starts_with($name, 'asset_qr.') || str_starts_with($name, 'asset_scanner.') || str_starts_with($name, 'print_jobs.')) return 'asset_qr';
             if (str_starts_with($name, 'reports.')) return 'reports';
             if (str_starts_with($name, 'audit.')) return 'audit';
             if (str_starts_with($name, 'categories.') || str_starts_with($name, 'campuses.') || str_starts_with($name, 'locations.') || str_starts_with($name, 'employees.')) return 'master';

@@ -389,7 +389,7 @@ class AssetResource extends Resource
                             Components\Select::make('status')
                                 ->label('Status')
                                 ->options([
-                                    'stock' => 'Stok (Gudang)',
+                                    'stock' => 'Tersedia',
                                     'active' => 'Aktif / Digunakan',
                                     'borrowed' => 'Dipinjam',
                                     'maintenance' => 'Dalam Perbaikan',
@@ -614,7 +614,7 @@ class AssetResource extends Resource
                     ->badge()
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'stock' => 'Stok (Gudang)',
+                        'stock' => 'Tersedia',
                         'active' => 'Aktif / Digunakan',
                         'borrowed' => 'Dipinjam',
                         'maintenance' => 'Dalam Perbaikan',
@@ -729,7 +729,7 @@ class AssetResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'stock' => 'Stok (Gudang)',
+                        'stock' => 'Tersedia',
                         'active' => 'Aktif / Digunakan',
                         'borrowed' => 'Dipinjam',
                         'maintenance' => 'Dalam Perbaikan',
@@ -772,7 +772,7 @@ class AssetResource extends Resource
                             Components\Select::make('new_status')
                                 ->label('Status Baru')
                                 ->options([
-                                    'stock' => 'Stok (Gudang)',
+                                    'stock' => 'Tersedia',
                                     'active' => 'Aktif / Digunakan',
                                     'borrowed' => 'Dipinjam',
                                     'maintenance' => 'Dalam Perbaikan',

@@ -118,7 +118,7 @@ abstract class BaseCategoryAssetResource extends Resource
                     ->toggleable()
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'stock'                   => 'Stok (Gudang)',
+                        'stock'                   => 'Tersedia',
                         'active'                  => 'Aktif / Digunakan',
                         'borrowed'                => 'Dipinjam',
                         'maintenance'             => 'Dalam Perbaikan',
@@ -220,7 +220,7 @@ abstract class BaseCategoryAssetResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'stock'                    => 'Stok (Gudang)',
+                        'stock'                    => 'Tersedia',
                         'active'                   => 'Aktif / Digunakan',
                         'borrowed'                 => 'Dipinjam',
                         'maintenance'              => 'Dalam Perbaikan',
