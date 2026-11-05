@@ -16,4 +16,14 @@ class PrintJob extends Model
     {
         return $this->belongsTo(\App\Models\User::class, 'requested_by');
     }
+
+    public function asset()
+    {
+        return $this->belongsTo(\App\Models\Asset::class, 'inventory_number', 'inventory_number')->withTrashed();
+    }
+
+    public function station()
+    {
+        return $this->belongsTo(\App\Models\PrinterStation::class, 'printer_station', 'station_key');
+    }
 }
