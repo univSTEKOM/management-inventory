@@ -88,6 +88,13 @@ class InventoryBalanceResource extends Resource
                     ->toggleable()
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Keterangan')
+                    ->toggleable()
+                    ->searchable()
+                    ->placeholder('-')
+                    ->limit(50)
+                    ->tooltip(fn ($state) => $state),
                 Tables\Columns\TextColumn::make('last_unit')
                     ->label('Satuan')
                     ->toggleable()
@@ -152,6 +159,7 @@ class InventoryBalanceResource extends Resource
                             'name' => $record->name,
                             'category_id' => $record->category_id,
                             'brand' => $record->brand,
+                            'notes' => $record->notes,
                             'location_id' => $record->location_id,
                             'campus_id' => $record->campus_id,
                             'pic_id' => $record->pic_id,
@@ -162,6 +170,11 @@ class InventoryBalanceResource extends Resource
                                 ->label('Nama Barang')
                                 ->required()
                                 ->maxLength(255),
+                            Forms\Components\Textarea::make('notes')
+                                ->label('Keterangan')
+                                ->rows(2)
+                                ->maxLength(500)
+                                ->columnSpanFull(),
                             Forms\Components\Select::make('category_id')
                                 ->label('Kategori')
                                 ->options(fn () => \App\Models\Category::whereHas('classifications', fn ($query) => $query->where('slug', 'barang-habis-pakai'))->pluck('name', 'id'))

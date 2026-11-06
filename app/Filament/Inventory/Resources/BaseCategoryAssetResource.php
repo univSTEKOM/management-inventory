@@ -100,7 +100,7 @@ abstract class BaseCategoryAssetResource extends Resource
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Keterangan')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->toggleable()
                     ->placeholder('-')
                     ->limit(50)
                     ->tooltip(fn ($state) => $state),
