@@ -99,6 +99,13 @@ class UnifiedItemResource extends Resource
                     ->toggleable()
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Keterangan')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('-')
+                    ->limit(50)
+                    ->tooltip(fn ($state) => $state),
                 Tables\Columns\TextColumn::make('unit_name')
                     ->label('Satuan')
                     ->toggleable()
