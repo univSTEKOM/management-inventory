@@ -13,6 +13,17 @@ use App\Http\Controllers\PrintJobController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    Route::get('/version', function () {
+        return response()->json([
+            'status' => 'ok',
+            'build' => env('APP_BUILD_VERSION', 'local'),
+            'has_conflict_check' => str_contains(
+                file_get_contents(app_path('Services/AssetImport/RowValidator.php')),
+                'locationElsewhere'
+            ),
+        ]);
+    });
+
     Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 
     Route::middleware('auth:sanctum')->group(function () {

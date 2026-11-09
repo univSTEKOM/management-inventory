@@ -26,11 +26,13 @@ php artisan migrate --force --no-interaction || {
 # ── 3. Clear semua cache lama (hindari stale cache) ──────────────────────────
 echo ""
 echo "🧹 [3/7] Membersihkan cache lama..."
+php artisan optimize:clear 2>/dev/null || true
 php artisan config:clear 2>/dev/null || true
 php artisan route:clear 2>/dev/null || true
 php artisan view:clear 2>/dev/null || true
 php artisan event:clear 2>/dev/null || true
 php artisan cache:clear >/dev/null 2>&1 || true
+rm -f bootstrap/cache/*.php || true
 
 # Bersihkan data Pulse dari deployment sebelumnya
 if php artisan list 2>/dev/null | grep -q "pulse:clear"; then
