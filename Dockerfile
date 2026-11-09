@@ -98,10 +98,6 @@
     COPY --from=php-deps /app/vendor ./vendor
     COPY --from=node-build /app/public/build ./public/build
 
-    # Invalidate build cache so Dokploy/Docker always copies fresh code on new commits
-    ARG CACHEBUST=20261109-1340
-    ENV APP_BUILD_VERSION=${CACHEBUST}
-
     COPY --chown=app:app . .
 
     # Pastikan bootstrap cache lama tidak terbawa
