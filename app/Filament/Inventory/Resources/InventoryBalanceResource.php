@@ -93,8 +93,9 @@ class InventoryBalanceResource extends Resource
                     ->toggleable()
                     ->searchable()
                     ->placeholder('-')
+                    ->formatStateUsing(fn ($state) => \App\Models\Asset::cleanNotes($state))
                     ->limit(50)
-                    ->tooltip(fn ($state) => $state),
+                    ->tooltip(fn ($state) => \App\Models\Asset::cleanNotes($state)),
                 Tables\Columns\TextColumn::make('last_unit')
                     ->label('Satuan')
                     ->toggleable()

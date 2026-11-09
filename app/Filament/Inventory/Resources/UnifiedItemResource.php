@@ -104,8 +104,9 @@ class UnifiedItemResource extends Resource
                     ->searchable()
                     ->toggleable()
                     ->placeholder('-')
+                    ->formatStateUsing(fn ($state) => \App\Models\Asset::cleanNotes($state))
                     ->limit(50)
-                    ->tooltip(fn ($state) => $state),
+                    ->tooltip(fn ($state) => \App\Models\Asset::cleanNotes($state)),
                 Tables\Columns\TextColumn::make('unit_name')
                     ->label('Satuan')
                     ->toggleable()
@@ -126,6 +127,12 @@ class UnifiedItemResource extends Resource
                     ->label('QTY')
                     ->toggleable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('campus_name')
+                    ->label('Gedung')
+                    ->toggleable()
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
                 Tables\Columns\TextColumn::make('location_name')
                     ->label('Lokasi')
                     ->toggleable()
@@ -249,19 +256,11 @@ class UnifiedItemResource extends Resource
                         return $query
                             ->when(
                                 $data['campus_id'] ?? null,
-                                function (Builder $query, $campusId) {
-                                    $locationNames = Location::where('campus_id', $campusId)->pluck('name')->toArray();
-
-                                    return $query->whereIn('location_name', $locationNames);
-                                }
+                                fn (Builder $query, $campusId) => $query->where('campus_id', $campusId)
                             )
                             ->when(
                                 $data['location_id'] ?? null,
-                                function (Builder $query, $locationId) {
-                                    $location = Location::find($locationId);
-
-                                    return $query->where('location_name', $location?->name);
-                                }
+                                fn (Builder $query, $locationId) => $query->where('location_id', $locationId)
                             );
                     })
                     ->indicateUsing(function (array $data): array {

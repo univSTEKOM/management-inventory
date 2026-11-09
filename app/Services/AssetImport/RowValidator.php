@@ -192,17 +192,7 @@ class RowValidator
                 $location = $locations
                     ->where('campus_id', $campus->id)
                     ->first(fn($l) => mb_strtolower($l->name) === mb_strtolower($ruanganName));
-
-                if (!$location) {
-                    // Cek apakah ruangan ada tapi di gedung lain (konflik)
-                    $locationElsewhere = $locations
-                        ->first(fn($l) => mb_strtolower($l->name) === mb_strtolower($ruanganName));
-
-                    if ($locationElsewhere) {
-                        $rowErrors[] = ['field' => 'Ruangan', 'message' => "Ruangan \"{$ruanganName}\" tidak berada di Gedung \"{$gedungName}\". Ruangan tersebut berada di Gedung \"{$locationElsewhere->campus->name}\"."];
-                    }
-                    // Jika belum ada sama sekali → akan dibuat otomatis saat import, tidak error
-                }
+                // Jika belum ada di gedung target → akan dibuat otomatis saat import di Importer.php
             }
 
             // ──────────────────────────────────────────

@@ -31,6 +31,7 @@ class UnifiedItem extends Model
             $assets = DB::table('assets')
                 ->leftJoin('categories', 'assets.category_id', '=', 'categories.id')
                 ->leftJoin('classifications', 'assets.classification_id', '=', 'classifications.id')
+                ->leftJoin('campuses', 'assets.campus_id', '=', 'campuses.id')
                 ->leftJoin('locations', 'assets.location_id', '=', 'locations.id')
                 ->leftJoin('purchase_items', 'assets.purchase_item_id', '=', 'purchase_items.id')
                 ->whereNull('assets.deleted_at')
@@ -51,6 +52,7 @@ class UnifiedItem extends Model
                     'classifications.name as classification_name',
                     'classifications.slug as classification_slug',
                     DB::raw('1 as quantity'),
+                    'campuses.name as campus_name',
                     'locations.name as location_name',
                     'purchase_items.unit_price as price',
                     'assets.status as status',
@@ -69,6 +71,7 @@ class UnifiedItem extends Model
                 ->leftJoin('categories', 'inventory_balances.category_id', '=', 'categories.id')
                 ->leftJoinSub($categoryClassification, 'cc', 'categories.id', '=', 'cc.category_id')
                 ->leftJoin('classifications', 'cc.classification_id', '=', 'classifications.id')
+                ->leftJoin('campuses', 'inventory_balances.campus_id', '=', 'campuses.id')
                 ->leftJoin('locations', 'inventory_balances.location_id', '=', 'locations.id')
                 ->select(
                     DB::raw("CONCAT('supply_', inventory_balances.id) as id"),
@@ -86,6 +89,7 @@ class UnifiedItem extends Model
                     DB::raw("COALESCE(classifications.name, 'Barang Habis Pakai') as classification_name"),
                     'classifications.slug as classification_slug',
                     'inventory_balances.quantity as quantity',
+                    'campuses.name as campus_name',
                     'locations.name as location_name',
                     DB::raw("NULL as price"),
                     DB::raw("'available' as status"),

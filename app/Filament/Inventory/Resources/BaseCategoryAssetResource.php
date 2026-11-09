@@ -102,8 +102,9 @@ abstract class BaseCategoryAssetResource extends Resource
                     ->searchable()
                     ->toggleable()
                     ->placeholder('-')
+                    ->formatStateUsing(fn ($state) => \App\Models\Asset::cleanNotes($state))
                     ->limit(50)
-                    ->tooltip(fn ($state) => $state),
+                    ->tooltip(fn ($state) => \App\Models\Asset::cleanNotes($state)),
                 Tables\Columns\TextColumn::make('unit')
                     ->label('Satuan')
                     ->toggleable()

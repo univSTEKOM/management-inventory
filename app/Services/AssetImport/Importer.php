@@ -123,16 +123,8 @@ class Importer
             $unitPrice  = $hargaVal ?? null;
             $totalPrice = $unitPrice !== null ? $unitPrice * $jumlah : null;
 
-            // Notes (Keterangan) + unknown info suffix
+            // Notes (Keterangan)
             $notesRaw    = trim($row['Keterangan'] ?? '');
-            $unknownInfo = array_filter([
-                $tahunUnknown ? 'tahun perolehan tidak diketahui' : null,
-                $hargaUnknown ? 'harga perolehan tidak diketahui' : null,
-            ]);
-            if ($unknownInfo) {
-                $suffix   = '(' . implode(', ', $unknownInfo) . ')';
-                $notesRaw = $notesRaw !== '' ? $notesRaw . ' ' . $suffix : $suffix;
-            }
 
             // Shared base data for Asset records
             $baseAssetData = [

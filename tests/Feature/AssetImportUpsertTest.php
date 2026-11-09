@@ -470,4 +470,84 @@ class AssetImportUpsertTest extends TestCase
         $this->assertEquals('Updated Via Dirty Kode', $asset->name);
         $this->assertEquals('INV0000001', $asset->inventory_number);
     }
+
+    public function test_import_supports_same_room_name_across_different_campuses()
+    {
+        $kampusA = Campus::where('name', 'Kampus A')->first();
+        $kampusB = Campus::factory()->create(['name' => 'Kampus B']);
+
+        // Ruang 101 sudah ada di Kampus A
+        $locA = Location::create([
+            'campus_id' => $kampusA->id,
+            'name' => 'Ruang 101',
+        ]);
+
+        // Import barang baru di Kampus B dengan nama ruangan yang sama: Ruang 101
+        $row = $this->getValidRow([
+            'Gedung' => 'Kampus B',
+            'Ruangan' => 'Ruang 101',
+            'Nama Barang' => 'Laptop Kampus B',
+        ]);
+
+        $errors = $this->service->validateRows([$row]);
+        $this->assertEmpty($errors, 'Validation should not fail when room name exists in another campus');
+
+        $this->service->import([$row]);
+
+        // Verifikasi lokasi di Kampus B terbentuk dengan benar
+        $locB = Location::where('campus_id', $kampusB->id)->where('name', 'Ruang 101')->first();
+        $this->assertNotNull($locB);
+        $this->assertNotEquals($locA->id, $locB->id);
+
+        // Verifikasi aset yang terimport memiliki campus_id dan location_id milik Kampus B
+        $asset = Asset::where('name', 'Laptop Kampus B')->first();
+        $this->assertNotNull($asset);
+        $this->assertEquals($kampusB->id, $asset->campus_id);
+        $this->assertEquals($locB->id, $asset->location_id);
+    }
+
+    public function test_import_same_room_multiple_rows_does_not_duplicate_location_in_same_campus()
+    {
+        $kampusB = Campus::factory()->create(['name' => 'Kampus Multi']);
+
+        $rows = [
+            $this->getValidRow([
+                'Gedung' => 'Kampus Multi',
+                'Ruangan' => 'Lab Komputer',
+                'Nama Barang' => 'PC 1',
+            ]),
+            $this->getValidRow([
+                'Gedung' => 'Kampus Multi',
+                'Ruangan' => 'Lab Komputer',
+                'Nama Barang' => 'PC 2',
+            ]),
+        ];
+
+        $errors = $this->service->validateRows($rows);
+        $this->assertEmpty($errors);
+
+        $this->service->import($rows);
+
+        $count = Location::where('campus_id', $kampusB->id)->where('name', 'Lab Komputer')->count();
+        $this->assertEquals(1, $count);
+    }
+
+    public function test_asset_model_integrity_prevents_linking_location_to_wrong_campus()
+    {
+        $kampusA = Campus::where('name', 'Kampus A')->first();
+        $kampusB = Campus::factory()->create(['name' => 'Kampus Other']);
+
+        $locB = Location::create([
+            'campus_id' => $kampusB->id,
+            'name' => 'Ruang 202',
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Lokasi/Ruangan yang dipilih tidak berada di Gedung yang sesuai.');
+
+        Asset::factory()->create([
+            'campus_id' => $kampusA->id,
+            'location_id' => $locB->id, // Mismatched!
+        ]);
+    }
 }

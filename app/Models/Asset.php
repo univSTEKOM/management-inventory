@@ -106,16 +106,21 @@ class Asset extends Model {
     }
 
     /**
-     * Keterangan untuk cetak checklist tanpa catatan otomatis dalam kurung
+     * Keterangan untuk cetak checklist & tampilan tabel tanpa catatan otomatis dalam kurung
      * seperti (tahun perolehan tidak diketahui, harga perolehan tidak diketahui).
      */
     public function printNotes(): ?string
     {
-        if (! $this->notes) {
+        return static::cleanNotes($this->notes);
+    }
+
+    public static function cleanNotes(?string $notes): ?string
+    {
+        if (! $notes) {
             return null;
         }
 
-        $cleaned = preg_replace('/\s*\([^)]*(?:tidak diketahui|otomatis|perolehan)[^)]*\)/i', '', $this->notes);
+        $cleaned = preg_replace('/\s*\([^)]*(?:tidak diketahui|otomatis|perolehan)[^)]*\)/iu', '', $notes);
         $cleaned = trim((string) $cleaned);
         $cleaned = trim($cleaned, " \t\n\r\0\x0B,-");
 
