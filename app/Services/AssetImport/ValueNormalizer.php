@@ -30,6 +30,7 @@ class ValueNormalizer
      * Mapping dari display value Status → internal value (status).
      */
     public const STATUS_MAP = [
+        'tersedia'                  => 'stock',
         'stok'                      => 'stock',
         'stock'                     => 'stock',
         'aktif / digunakan'         => 'active',
@@ -45,6 +46,8 @@ class ValueNormalizer
         'terjual'                   => 'sold',
         'sold'                      => 'sold',
         'dihapuskan / musnah'       => 'disposed',
+        'dihapuskan'                => 'disposed',
+        'musnah'                    => 'disposed',
         'disposed'                  => 'disposed',
         'penghapusan administratif' => 'administratively_deleted',
         'administratively_deleted'  => 'administratively_deleted',
