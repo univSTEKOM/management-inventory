@@ -124,20 +124,54 @@ class DirectMutationService
                 if ($source->quantity < $quantity) {
                     throw ValidationException::withMessages(['items' => "Stok {$source->name} tidak mencukupi (tersedia {$source->quantity})."]);
                 }
-                $destination = InventoryBalance::where([
-                    'category_id' => $source->category_id, 'name' => $source->name,
-                    'brand' => $source->brand, 'location_id' => $mutation->destination_location_id,
-                ])->lockForUpdate()->first();
-                if (! $destination) {
-                    $destination = InventoryBalance::create([
-                        'category_id' => $source->category_id, 'name' => $source->name, 'brand' => $source->brand,
-                        'campus_id' => $mutation->destination_campus_id, 'location_id' => $mutation->destination_location_id,
-                        'quantity' => 0, 'status' => $source->status ?? 'stock', 'kondisi' => $source->kondisi ?? 'good',
-                        'pic_id' => $mutation->destination_pic_id,
-                    ]);
+
+                $isFullMove = ($source->quantity === $quantity);
+
+                if ($isFullMove) {
+                    // Pindah semua stok: update lokasi sumber langsung agar barcode ikut pindah.
+                    // Kalau di destinasi sudah ada baris yang sama, merge qty ke sana lalu hapus sumber.
+                    $existingDestination = InventoryBalance::where([
+                        'category_id' => $source->category_id, 'name' => $source->name,
+                        'brand' => $source->brand, 'location_id' => $mutation->destination_location_id,
+                    ])->lockForUpdate()->first();
+
+                    if ($existingDestination) {
+                        // Destinasi sudah ada → gabungkan qty, hapus baris sumber
+                        $existingDestination->increment('quantity', $quantity);
+                        $source->delete();
+                    } else {
+                        // Destinasi belum ada → pindahkan baris sumber ke lokasi tujuan (barcode ikut)
+                        $source->update([
+                            'campus_id'   => $mutation->destination_campus_id,
+                            'location_id' => $mutation->destination_location_id,
+                            'pic_id'      => $mutation->destination_pic_id,
+                        ]);
+                    }
+                } else {
+                    // Pindah sebagian: sumber tetap dengan barcodenya, destinasi dapat barcode baru.
+                    $destination = InventoryBalance::where([
+                        'category_id' => $source->category_id, 'name' => $source->name,
+                        'brand' => $source->brand, 'location_id' => $mutation->destination_location_id,
+                    ])->lockForUpdate()->first();
+                    if (! $destination) {
+                        $destination = InventoryBalance::create([
+                            'category_id'          => $source->category_id,
+                            'name'                 => $source->name,
+                            'brand'                => $source->brand,
+                            'campus_id'            => $mutation->destination_campus_id,
+                            'location_id'          => $mutation->destination_location_id,
+                            'quantity'             => 0,
+                            'status'               => $source->status ?? 'stock',
+                            'kondisi'              => $source->kondisi ?? 'good',
+                            'pic_id'               => $mutation->destination_pic_id,
+                            'master_barcode'       => SupplyBarcodeGenerator::generateMaster(),
+                            'latest_sequence'      => 0,
+                            'has_pure_master_unit' => false,
+                        ]);
+                    }
+                    $source->decrement('quantity', $quantity);
+                    $destination->increment('quantity', $quantity);
                 }
-                $source->decrement('quantity', $quantity);
-                $destination->increment('quantity', $quantity);
             }
             $mutation->items()->create([
                 'asset_id' => $kind === 'asset' ? $source->id : null,
