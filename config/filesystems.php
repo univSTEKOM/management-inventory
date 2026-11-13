@@ -61,7 +61,15 @@ return [
         // ],
 
         // Custom MinIO / Contabo Object Storage (like filament-portalnews)
-        's3' => [
+        // If S3_DRIVER=local or FILESYSTEM_DISK=public/local, fallback disk 's3' and 's3_thumb' to local public disk
+        's3' => (env('S3_DRIVER') === 'local' || in_array(env('FILESYSTEM_DISK'), ['local', 'public'])) ? [
+            'driver'     => 'local',
+            'root'       => storage_path('app/public'),
+            'url'        => env('APP_URL', 'http://localhost') . '/storage',
+            'visibility' => 'public',
+            'throw'      => false,
+            'report'     => false,
+        ] : [
             'driver'                  => 's3',
             'key'                     => env('S3_KEY', '02beaa1bdbc1b2e411eb77929a6d21ee'),
             'secret'                  => env('S3_SECRET', 'eb785fc9237b80c1d03b3f0a4dd380df'),
@@ -74,13 +82,34 @@ return [
             'report'                  => true,
         ],
 
-        's3_thumb' => [
+        's3_thumb' => (env('S3_DRIVER') === 'local' || in_array(env('FILESYSTEM_DISK'), ['local', 'public'])) ? [
+            'driver'     => 'local',
+            'root'       => storage_path('app/public'),
+            'url'        => rtrim(env('APP_URL', 'http://localhost'), '/') . '/asset-photo-thumb',
+            'visibility' => 'public',
+            'throw'      => false,
+            'report'     => false,
+        ] : [
             'driver'                  => 's3',
             'key'                     => env('S3_KEY', '02beaa1bdbc1b2e411eb77929a6d21ee'),
             'secret'                  => env('S3_SECRET', 'eb785fc9237b80c1d03b3f0a4dd380df'),
             'region'                  => env('S3_REGION', 'us-east-1'),
             'bucket'                  => env('S3_BUCKET', 'asset'),
             'url'                     => rtrim(env('APP_URL', 'http://localhost'), '/') . '/asset-photo-thumb',
+            'endpoint'                => env('S3_ENDPOINT', 'https://sin1.contabostorage.com'),
+            'use_path_style_endpoint' => true,
+            'throw'                   => true,
+            'report'                  => true,
+        ],
+
+        // Dedicated disk for sync to Contabo S3, even when local fallback is active
+        's3_direct' => [
+            'driver'                  => 's3',
+            'key'                     => env('S3_KEY', '02beaa1bdbc1b2e411eb77929a6d21ee'),
+            'secret'                  => env('S3_SECRET', 'eb785fc9237b80c1d03b3f0a4dd380df'),
+            'region'                  => env('S3_REGION', 'us-east-1'),
+            'bucket'                  => env('S3_BUCKET', 'asset'),
+            'url'                     => env('S3_URL', 'https://sin1.contabostorage.com/adef61e95f524badb0b95b15d2c793b7:asset'),
             'endpoint'                => env('S3_ENDPOINT', 'https://sin1.contabostorage.com'),
             'use_path_style_endpoint' => true,
             'throw'                   => true,
