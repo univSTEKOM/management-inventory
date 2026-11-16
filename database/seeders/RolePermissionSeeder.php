@@ -15,6 +15,7 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             // Asset
             'assets.view', 'assets.create', 'assets.update', 'assets.delete', 'assets.bulk_edit_brand',
+            'assets.bulk_edit_name',
             'assets.bulk_change_category', 'assets.bulk_change_kondisi', 'assets.bulk_change_status',
             'assets.bulk_move_location', 'assets.bulk_print_checklist', 'assets.bulk_print_barcode',
             'assets.widget.total_items', 'assets.widget.acquisition_value',
@@ -75,6 +76,7 @@ class RolePermissionSeeder extends Seeder
                 'assets.widget.total_items',
                 'assets.view', 'assets.create', 'assets.update',
                 'assets.bulk_edit_brand',
+                'assets.bulk_edit_name',
                 'assets.bulk_print_checklist', 'assets.bulk_print_barcode',
                 'supplies.stock_in', 'supplies.update',
                 'intake.view',
