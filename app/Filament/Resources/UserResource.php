@@ -123,6 +123,7 @@ class UserResource extends Resource
             'assets.update' => 'Mengubah Data Barang',
             'assets.delete' => 'Menghapus Barang',
             'assets.bulk_edit_brand' => 'Ubah Merk / Tipe Massal (Bulk Edit)',
+            'assets.bulk_edit_name' => 'Ubah Nama Barang Massal (Bulk Edit)',
             'assets.bulk_change_category' => 'Ganti Kategori Massal (Bulk Edit)',
             'assets.bulk_change_kondisi' => 'Ubah Kondisi Massal (Bulk Edit)',
             'assets.bulk_change_status' => 'Ubah Status Massal (Bulk Edit)',

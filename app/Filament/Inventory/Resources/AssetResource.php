@@ -7,6 +7,7 @@ use App\Filament\Support\AddPhotoActions;
 use App\Filament\Support\ChangeBrandActions;
 use App\Filament\Support\ChangeCategoryActions;
 use App\Filament\Support\ChangeKondisiActions;
+use App\Filament\Support\ChangeNameActions;
 use App\Filament\Support\ChangeStatusActions;
 use App\Filament\Support\DeleteItemsActions;
 use App\Filament\Support\MoveLocationActions;
@@ -895,6 +896,7 @@ class AssetResource extends Resource
                 MoveLocationActions::bulkAction(),
                 ChangeCategoryActions::bulkAction(),
                 ChangeBrandActions::bulkAction(),
+                ChangeNameActions::bulkAction(),
                 ChangeStatusActions::bulkAction(),
                 ChangeKondisiActions::bulkAction(),
                 DeleteItemsActions::bulkAction(),

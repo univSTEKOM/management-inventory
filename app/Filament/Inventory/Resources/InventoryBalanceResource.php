@@ -6,6 +6,7 @@ use App\Enums\AuditAction;
 use App\Filament\Inventory\Resources\InventoryBalanceResource\Pages;
 use App\Filament\Support\ChangeBrandActions;
 use App\Filament\Support\ChangeCategoryActions;
+use App\Filament\Support\ChangeNameActions;
 use App\Filament\Support\DeleteItemsActions;
 use App\Filament\Support\MoveLocationActions;
 use App\Models\AuditLog;
@@ -356,6 +357,7 @@ class InventoryBalanceResource extends Resource
                 MoveLocationActions::bulkAction(),
                 ChangeCategoryActions::bulkAction(),
                 ChangeBrandActions::bulkAction(),
+                ChangeNameActions::bulkAction(),
                 DeleteItemsActions::bulkAction(),
             ]);
     }
