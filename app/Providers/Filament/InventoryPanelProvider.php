@@ -84,6 +84,9 @@ class InventoryPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Inventory/Widgets'), for: 'App\Filament\Inventory\Widgets')
+            ->widgets([
+                \App\Filament\Inventory\Widgets\QuickAccessWidget::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

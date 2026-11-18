@@ -12,7 +12,7 @@ class LatestAssetMovements extends TableWidget
 {
     protected int | string | array $columnSpan = 2;
 
-    protected static ?int $sort = 1;
+    protected static ?int $sort = 3;
 
     public static function canView(): bool
     {

@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Inventory\Widgets\AssetStatusChart;
+use App\Filament\Inventory\Widgets\BarangPerGedungChart;
 use App\Filament\Inventory\Widgets\LatestAssetMovements;
 use App\Filament\Pages\Auth\CustomRequestPasswordReset;
 use App\Filament\Pages\Auth\EditProfile;
@@ -94,7 +95,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Inventory/Resources'), for: 'App\Filament\Inventory\Resources')
             ->discoverPages(in: app_path('Filament/Inventory/Pages'), for: 'App\Filament\Inventory\Pages')
             ->widgets([
+                \App\Filament\Widgets\QuickAccessWidget::class,
                 AssetStatusChart::class,
+                BarangPerGedungChart::class,
                 LatestAssetMovements::class,
             ])
             ->renderHook(
