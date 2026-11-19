@@ -29,6 +29,7 @@ echo "🧹 [3/7] Membersihkan cache lama..."
 php artisan optimize:clear 2>/dev/null || true
 php artisan config:clear 2>/dev/null || true
 php artisan route:clear 2>/dev/null || true
+php artisan filament:clear-cached-components
 php artisan view:clear 2>/dev/null || true
 php artisan event:clear 2>/dev/null || true
 php artisan cache:clear >/dev/null 2>&1 || true
@@ -44,7 +45,6 @@ fi
 echo ""
 echo "📦 [4/7] Membangun ulang cache production..."
 php artisan config:cache
-php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 # Republish Filament assets — image build runs composer with --no-scripts,
@@ -53,6 +53,7 @@ php artisan event:cache
 # "e is not a function" in notifications.js at runtime.
 php artisan filament:assets
 php artisan filament:cache-components
+php artisan route:cache
 
 # Cache icons jika package tersedia
 if php artisan list | grep -q "icons:cache"; then

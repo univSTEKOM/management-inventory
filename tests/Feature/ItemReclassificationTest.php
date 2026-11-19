@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\ItemReclassificationService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -172,6 +173,15 @@ class ItemReclassificationTest extends TestCase
 
         $this->expectException(AuthorizationException::class);
         $this->service->execute($unauthorized, 'aset', 'inventaris', [], [], (string) Str::uuid());
+    }
+
+    public function test_reclassification_page_has_a_named_route_in_both_panels(): void
+    {
+        foreach (['admin', 'inventory'] as $panel) {
+            $name = "filament.{$panel}.pages.reclassify-items";
+            $this->assertTrue(Route::has($name));
+            $this->assertSame(route($name), ReclassifyItems::getUrl(panel: $panel));
+        }
     }
 
     public function test_page_previews_and_confirms_selected_items(): void
