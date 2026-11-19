@@ -54,4 +54,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+      - name: Verify cached Filament routes
+        run: |
+          php artisan filament:clear-cached-components
+          php artisan filament:cache-components
+          php artisan route:cache
+          php artisan route:list --json --name=reclassify-items | php -r '
+            $routes = array_column(json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR), "name");
+            foreach (["admin", "inventory"] as $panel) {
+                $name = "filament.".$panel.".pages.reclassify-items";
+                if (!in_array($name, $routes, true)) {
+                    fwrite(STDERR, "Missing route: ".$name.PHP_EOL);
+                    exit(1);
+                }
+            }
+          '
+          php artisan route:clear
+          php artisan filament:clear-cached-components
       - run: php artisan test

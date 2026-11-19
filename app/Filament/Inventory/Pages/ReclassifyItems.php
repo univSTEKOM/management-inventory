@@ -20,6 +20,8 @@ class ReclassifyItems extends Page
 
     protected string $view = 'filament.pages.reclassify-items';
 
+    protected static ?string $slug = 'reclassify-items';
+
     protected static ?string $title = 'Reklasifikasi Barang';
 
     public string $source = '';
