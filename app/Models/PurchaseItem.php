@@ -35,6 +35,15 @@ class PurchaseItem extends Model
         'quantity' => 'integer',
     ];
 
+    public function scopeOriginalAcquisitions(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $query->whereNotExists(fn ($lines) => $lines->selectRaw('1')
+            ->from('item_reclassification_lines')
+            ->whereColumn('destination_purchase_item_id', 'purchase_items.id')
+            ->where(fn ($source) => $source->whereNull('source_purchase_item_id')
+                ->orWhereColumn('source_purchase_item_id', '!=', 'destination_purchase_item_id')));
+    }
+
     public function purchase(): BelongsTo
     {
         return $this->belongsTo(Purchase::class);

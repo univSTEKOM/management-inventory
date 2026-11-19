@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Ubah atribut identitas baris BHP (kategori / ruangan). Baris BHP unik per
- * (category_id, name, brand, location_id), jadi kalau perubahan bikin baris ini
+ * (category_id, name, brand, unit, location_id), jadi kalau perubahan bikin baris ini
  * identik dengan baris lain, keduanya digabung: qty dijumlah, unit & pembelian
  * dipindah ke baris tujuan, baris asal dihapus. Semua dalam satu transaksi
  * dengan row lock supaya pembelian/mutasi yang jalan bersamaan menunggu.
@@ -26,7 +26,7 @@ class InventoryBalanceMerger
             $old = $balance->only([...array_keys($changes), 'quantity']);
 
             $identity = array_merge(
-                $balance->only(['category_id', 'name', 'brand', 'location_id']),
+                $balance->only(['category_id', 'name', 'brand', 'unit', 'location_id']),
                 array_intersect_key($changes, array_flip(['category_id', 'name', 'brand', 'location_id'])),
             );
 
@@ -45,7 +45,7 @@ class InventoryBalanceMerger
 
             $target->increment('quantity', $balance->quantity);
             $balance->units()->update(['inventory_balance_id' => $target->id]);
-            $balance->purchaseItems()->update(['inventory_balance_id' => $target->id]);
+            $balance->purchaseItems()->withTrashed()->update(['inventory_balance_id' => $target->id]);
             $balance->delete();
 
             AuditLogger::log($auditAction, $target, $old, ['merged_into' => $target->id, 'quantity' => $target->quantity]);

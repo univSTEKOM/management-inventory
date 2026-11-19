@@ -248,7 +248,7 @@ class EditAsset extends EditRecord
                     if (isset($purchaseItemUpdates['total_price'])) {
                         // Ideally we should recalculate the total_amount of the Purchase
                         // by summing all its PurchaseItems. For now, we just update it if it's a 1-item purchase.
-                        $totalAmount = $this->record->purchaseItem->purchase->purchaseItems()->sum('total_price');
+                        $totalAmount = $this->record->purchaseItem->purchase->purchaseItems()->originalAcquisitions()->sum('total_price');
                         $purchaseUpdates['total_amount'] = $totalAmount;
                     }
                     

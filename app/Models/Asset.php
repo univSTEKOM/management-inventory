@@ -46,7 +46,13 @@ class Asset extends Model {
             }
         });
 
+        static::restoring(fn (Asset $asset) => $asset->status !== \App\Services\ItemReclassificationService::REMOVED_STATUS);
+
         static::forceDeleting(function (Asset $asset) {
+            if ($asset->status === \App\Services\ItemReclassificationService::REMOVED_STATUS) {
+                return false;
+            }
+
             // File bisa berada di disk `public` (upload lama) atau disk default/S3
             // (upload Filament & API pengecekan), jadi hapus dari keduanya.
             $disks = array_unique(['public', config('filesystems.default')]);
