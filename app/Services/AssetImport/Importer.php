@@ -154,14 +154,16 @@ class Importer
                     'total_amount'  => $totalPrice,
                 ]);
 
-                // firstOrCreate balance grouped by category + name + location
+                // Identitas saldo BHP mencakup kategori, nama, merek, satuan, dan lokasi.
                 $balanceName = trim($row['Nama Barang'] ?? '');
+                $balanceUnit = InventoryBalance::normalizeUnit($row['Satuan'] ?? null);
                 $balance = InventoryBalance::where([
                     'category_id' => $category->id,
                     'name'        => $balanceName,
                     'brand'       => trim($row['Merk/Tipe'] ?? '') ?: null,
+                    'unit'        => $balanceUnit,
                     'location_id' => $location?->id,
-                ])->first();
+                ])->lockForUpdate()->first();
 
                 $isNewBalance = false;
 
@@ -169,7 +171,8 @@ class Importer
                     $balance = InventoryBalance::create([
                         'category_id' => $category->id,
                         'name'        => $balanceName,
-                        'brand'       => trim($row['Merk/Tipe'] ?? ''),
+                        'brand'       => trim($row['Merk/Tipe'] ?? '') ?: null,
+                        'unit'        => $balanceUnit,
                         'location_id' => $location?->id,
                         'campus_id' => $campus?->id,
                         'quantity'  => 0,

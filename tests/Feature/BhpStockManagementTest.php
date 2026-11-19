@@ -259,7 +259,7 @@ class BhpStockManagementTest extends TestCase
         $category->classifications()->attach($this->classification);
         $target = InventoryBalance::create([
             'category_id' => $category->id, 'name' => $balance->name,
-            'brand' => $balance->brand, 'location_id' => $balance->location_id,
+            'brand' => $balance->brand, 'unit' => $balance->unit, 'location_id' => $balance->location_id,
             'quantity' => 0,
         ]);
 

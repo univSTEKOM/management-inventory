@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Inventory\Pages\ReclassifyItems;
 use App\Filament\Inventory\Widgets\AssetStatusChart;
 use App\Filament\Inventory\Widgets\BarangPerGedungChart;
 use App\Filament\Inventory\Widgets\LatestAssetMovements;
@@ -89,6 +90,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
                 Dashboard::class,
+                ReclassifyItems::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             // Menyatukan menu inventaris ke dalam panel admin

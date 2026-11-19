@@ -85,7 +85,7 @@ class UnifiedItem extends Model
                     'categories.name as category_name',
                     'inventory_balances.name as item_name',
                     'inventory_balances.brand as brand',
-                    DB::raw("(SELECT unit FROM purchase_items WHERE purchase_items.inventory_balance_id = inventory_balances.id AND purchase_items.unit IS NOT NULL AND purchase_items.deleted_at IS NULL ORDER BY purchase_items.id DESC LIMIT 1) as unit_name"),
+                    DB::raw("COALESCE(inventory_balances.unit, (SELECT unit FROM purchase_items WHERE purchase_items.inventory_balance_id = inventory_balances.id AND purchase_items.unit IS NOT NULL AND purchase_items.deleted_at IS NULL ORDER BY purchase_items.id DESC LIMIT 1)) as unit_name"),
                     DB::raw("COALESCE(classifications.name, 'Barang Habis Pakai') as classification_name"),
                     'classifications.slug as classification_slug',
                     'inventory_balances.quantity as quantity',

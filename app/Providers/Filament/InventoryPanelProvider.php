@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Inventory\Pages\ReclassifyItems;
 use App\Filament\Pages\Auth\CustomRequestPasswordReset;
 use App\Filament\Pages\Auth\EditProfile;
 use App\Filament\Pages\Auth\Login;
@@ -82,6 +83,7 @@ class InventoryPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Inventory/Pages'), for: 'App\Filament\Inventory\Pages')
             ->pages([
                 Dashboard::class,
+                ReclassifyItems::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Inventory/Widgets'), for: 'App\Filament\Inventory\Widgets')
             ->widgets([
