@@ -29,8 +29,8 @@ class FixDbCommand extends Command
         }
         
         try {
-            DB::statement("ALTER TABLE inventory_balances ADD UNIQUE INDEX `inv_bal_unique_with_brand` (`category_id`, `name`, `brand`, `location_id`)");
-            $this->info("Added new unique index with brand!");
+            DB::statement("ALTER TABLE inventory_balances ADD UNIQUE INDEX `inv_bal_unique_with_unit` (`category_id`, `name`, `brand`, `unit`, `location_id`)");
+            $this->info("Added unique stock index with unit!");
         } catch (\Exception $e) {
             $this->warn("Failed to add new unique index: " . $e->getMessage());
         }

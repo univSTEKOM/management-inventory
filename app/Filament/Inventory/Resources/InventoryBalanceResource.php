@@ -99,6 +99,7 @@ class InventoryBalanceResource extends Resource
                     ->tooltip(fn ($state) => \App\Models\Asset::cleanNotes($state)),
                 Tables\Columns\TextColumn::make('last_unit')
                     ->label('Satuan')
+                    ->getStateUsing(fn (InventoryBalance $record) => $record->unit ?? $record->last_unit)
                     ->toggleable()
                     ->searchable(false)
                     ->sortable(false)

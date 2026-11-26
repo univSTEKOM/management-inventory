@@ -24,6 +24,9 @@ enum AuditAction: string
     case STATUS_CHANGE = 'status_change';
     case SKU_CHANGE = 'sku_change';
 
+    // Reklasifikasi barang (Aset / Inventaris / BHP)
+    case RECLASSIFIED = 'reclassified';
+
     // Media
     case PHOTO_UPLOADED = 'photo_uploaded';
     case PHOTO_DELETED = 'photo_deleted';

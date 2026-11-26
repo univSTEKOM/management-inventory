@@ -132,12 +132,15 @@ class DirectMutationService
                     // Kalau di destinasi sudah ada baris yang sama, merge qty ke sana lalu hapus sumber.
                     $existingDestination = InventoryBalance::where([
                         'category_id' => $source->category_id, 'name' => $source->name,
-                        'brand' => $source->brand, 'location_id' => $mutation->destination_location_id,
+                        'brand' => $source->brand, 'unit' => $source->unit,
+                        'location_id' => $mutation->destination_location_id,
                     ])->lockForUpdate()->first();
 
                     if ($existingDestination) {
                         // Destinasi sudah ada → gabungkan qty, hapus baris sumber
                         $existingDestination->increment('quantity', $quantity);
+                        $source->units()->update(['inventory_balance_id' => $existingDestination->id]);
+                        $source->purchaseItems()->withTrashed()->update(['inventory_balance_id' => $existingDestination->id]);
                         $source->delete();
                     } else {
                         // Destinasi belum ada → pindahkan baris sumber ke lokasi tujuan (barcode ikut)
@@ -151,13 +154,15 @@ class DirectMutationService
                     // Pindah sebagian: sumber tetap dengan barcodenya, destinasi dapat barcode baru.
                     $destination = InventoryBalance::where([
                         'category_id' => $source->category_id, 'name' => $source->name,
-                        'brand' => $source->brand, 'location_id' => $mutation->destination_location_id,
+                        'brand' => $source->brand, 'unit' => $source->unit,
+                        'location_id' => $mutation->destination_location_id,
                     ])->lockForUpdate()->first();
                     if (! $destination) {
                         $destination = InventoryBalance::create([
                             'category_id'          => $source->category_id,
                             'name'                 => $source->name,
                             'brand'                => $source->brand,
+                            'unit'                 => $source->unit,
                             'campus_id'            => $mutation->destination_campus_id,
                             'location_id'          => $mutation->destination_location_id,
                             'quantity'             => 0,
@@ -169,6 +174,11 @@ class DirectMutationService
                             'has_pure_master_unit' => false,
                         ]);
                     }
+                    $unitIds = $source->units()->where('status', 'available')
+                        ->orderByRaw('sub_barcode = ?', [$source->master_barcode])->orderBy('id')
+                        ->limit($quantity)->lockForUpdate()->pluck('id');
+                    $source->units()->whereIn('id', $unitIds)->update(['inventory_balance_id' => $destination->id]);
+
                     $source->decrement('quantity', $quantity);
                     $destination->increment('quantity', $quantity);
                 }

@@ -47,7 +47,7 @@ class RolePermissionSeeder extends Seeder
             // User Administration
             'users.view', 'users.create', 'users.update', 'users.delete',
             'roles.view', 'roles.create', 'roles.update', 'roles.delete',
-            'permissions.view', 'permissions.manage',
+            'permissions.view', 'permissions.manage', 'items.reclassify',
             // Panel Access
             'panel.admin', 'panel.inventory',
             // Dashboard & Widget Visibility

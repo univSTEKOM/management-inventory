@@ -168,7 +168,8 @@ class AssetResource extends Resource
                                 $set('category_id', null);
                                 $set('brand', null);
                             })
-                            ->disabled(fn ($record) => $record !== null && $record->classification_id !== null),
+                            ->disabled(fn ($record) => $record !== null && $record->classification_id !== null)
+                            ->native(false),
                     ]),
 
                 Section::make('Identitas Barang')

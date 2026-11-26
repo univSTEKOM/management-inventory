@@ -71,6 +71,34 @@ class DirectMutationTest extends \Tests\MutationTestCase
         $this->assertDatabaseHas('inventory_balances', ['brand' => 'Merek A', 'location_id' => $other->location_id, 'quantity' => 3]);
     }
 
+    public function test_partial_supply_mutation_preserves_units_and_batches_at_matching_unit_destination(): void
+    {
+        $this->supply->update(['unit' => 'Pcs']);
+        $purchase = \App\Models\Purchase::create(['ownership' => 'company']);
+        $batch = $this->supply->purchaseItems()->create([
+            'purchase_id' => $purchase->id, 'name' => $this->supply->name,
+            'unit' => 'Pcs', 'quantity' => 10, 'unit_price' => 1200,
+        ]);
+        foreach (range(1, 10) as $number) {
+            $this->supply->units()->create([
+                'purchase_item_id' => $batch->id, 'sub_barcode' => 'BHP-MUT-'.$number, 'status' => 'available',
+            ]);
+        }
+
+        $other = InventoryBalance::create($this->supply->only(['category_id', 'name', 'brand']) + [
+            'unit' => 'Box', 'campus_id' => $this->header['destination_campus_id'],
+            'location_id' => $this->header['destination_location_id'], 'quantity' => 20,
+        ]);
+
+        app(DirectMutationService::class)->create($this->operator, $this->header, $this->selected(), (string) Str::uuid());
+
+        $destination = InventoryBalance::where('location_id', $other->location_id)->where('unit', 'Pcs')->sole();
+        $this->assertEquals(20, $other->fresh()->quantity);
+        $this->assertEquals(3, $destination->quantity);
+        $this->assertSame(3, $destination->units()->where('purchase_item_id', $batch->id)->count());
+        $this->assertSame(7, $this->supply->units()->where('purchase_item_id', $batch->id)->count());
+    }
+
     public function test_moved_asset_is_rejected(): void
     {
         $this->asset->update(['location_id' => $this->header['destination_location_id']]);

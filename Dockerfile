@@ -118,6 +118,7 @@
 
     ENV OCTANE_SERVER=frankenphp \
         LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=local \
+        S3_DRIVER=s3 \
         S3_KEY=02beaa1bdbc1b2e411eb77929a6d21ee \
         S3_SECRET=eb785fc9237b80c1d03b3f0a4dd380df \
         S3_REGION=us-east-1 \
