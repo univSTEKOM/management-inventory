@@ -48,7 +48,24 @@ class SyncStorageToS3Command extends Command
         $specificDir = $this->option('dir');
         $force = (bool) $this->option('force');
 
-        $directories = $specificDir ? [$specificDir] : ['asset-photos', 'foto-resi', 'invoices', 'inventory-photos'];
+        // Direktori default: semua folder yang ada di local disk public
+        // Jika --dir diberikan, hanya direktori tersebut yang diproses
+        if ($specificDir) {
+            $directories = [$specificDir];
+        } else {
+            // Auto-detect semua direktori yang ada di local storage
+            $directories = collect($localDisk->directories())
+                ->filter(fn ($d) => ! str_starts_with($d, '.'))
+                ->values()
+                ->toArray();
+
+            if (empty($directories)) {
+                $this->warn('Tidak ada direktori ditemukan di local storage.');
+                return self::SUCCESS;
+            }
+
+            $this->line('Direktori yang akan disinkronkan: ' . implode(', ', $directories));
+        }
 
         $totalUploaded = 0;
         $totalSkipped = 0;

@@ -72,6 +72,34 @@ class ReclassifyItems extends Page
         }
     }
 
+    public function selectAllVisible(array $ids): void
+    {
+        $stringIds = array_map('strval', $ids);
+        $this->selected = array_values(array_unique(array_merge($this->selected, $stringIds)));
+    }
+
+    public function deselectAll(): void
+    {
+        $this->selected = [];
+        $this->quantities = [];
+        $this->preview = [];
+    }
+
+    public function toggleGroup(array $ids): void
+    {
+        $stringIds = array_map('strval', $ids);
+        $currentSelected = array_map('strval', $this->selected);
+        $intersect = array_intersect($stringIds, $currentSelected);
+
+        if (count($intersect) === count($stringIds)) {
+            // Unselect all in this group
+            $this->selected = array_values(array_diff($currentSelected, $stringIds));
+        } else {
+            // Select all in this group
+            $this->selected = array_values(array_unique(array_merge($currentSelected, $stringIds)));
+        }
+    }
+
     public function showPreview(ItemReclassificationService $service): void
     {
         abort_unless(static::canAccess(), 403);
