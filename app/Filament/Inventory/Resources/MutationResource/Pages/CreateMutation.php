@@ -185,20 +185,12 @@ class CreateMutation extends Page
                     }),
 
                 Select::make('source_pic_id')
-                    ->label('PIC Asal')
+                    ->label('PIC Asal (opsional)')
                     ->placeholder('-- Tanpa PIC Khusus --')
                     ->options(fn () => Employee::orderBy('name')->pluck('name', 'id'))
                     ->native(false)
                     ->searchable()
                     ->preload()
-                    ->live()
-                    ->hintAction(
-                        Action::make('addSourcePic')
-                            ->label('+ Tambah PIC')
-                            ->icon('heroicon-m-plus-circle')
-                            ->color('primary')
-                            ->action(fn () => $this->openNewPicModal('source_pic_id'))
-                    )
                     ->createOptionAction(
                         fn (Action $action) => $action
                             ->modalHeading('Tambah PIC Asal Baru')
@@ -258,20 +250,12 @@ class CreateMutation extends Page
                     }),
 
                 Select::make('destination_pic_id')
-                    ->label('PIC Tujuan')
+                    ->label('PIC Tujuan (opsional)')
                     ->placeholder('-- Tanpa PIC Khusus --')
                     ->options(fn () => Employee::orderBy('name')->pluck('name', 'id'))
                     ->native(false)
                     ->searchable()
                     ->preload()
-                    ->live()
-                    ->hintAction(
-                        Action::make('addDestinationPic')
-                            ->label('+ Tambah PIC')
-                            ->icon('heroicon-m-plus-circle')
-                            ->color('success')
-                            ->action(fn () => $this->openNewPicModal('destination_pic_id'))
-                    )
                     ->createOptionAction(
                         fn (Action $action) => $action
                             ->modalHeading('Tambah PIC Tujuan Baru')

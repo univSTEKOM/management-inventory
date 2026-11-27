@@ -109,7 +109,7 @@
                             </span>
                         </div>
 
-                        {{ $this->getSchema('sourceRouteSchema') }}
+                        {!! $this->getSchema('sourceRouteSchema') !!}
                     </div>
 
                     {{-- Card Lokasi Tujuan --}}
@@ -124,7 +124,7 @@
                             </span>
                         </div>
 
-                        {{ $this->getSchema('destinationRouteSchema') }}
+                        {!! $this->getSchema('destinationRouteSchema') !!}
                     </div>
                 </div>
 
