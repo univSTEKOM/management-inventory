@@ -63,14 +63,8 @@ class UnifiedItem extends Model
                     DB::raw("EXISTS (SELECT 1 FROM asset_photos WHERE asset_photos.asset_id = assets.id AND asset_photos.file_path <> '') as has_photo")
                 );
 
-            $categoryClassification = DB::table('category_classification')
-                ->select('category_id', DB::raw('MIN(classification_id) as classification_id'))
-                ->groupBy('category_id');
-
             $supplies = DB::table('inventory_balances')
                 ->leftJoin('categories', 'inventory_balances.category_id', '=', 'categories.id')
-                ->leftJoinSub($categoryClassification, 'cc', 'categories.id', '=', 'cc.category_id')
-                ->leftJoin('classifications', 'cc.classification_id', '=', 'classifications.id')
                 ->leftJoin('campuses', 'inventory_balances.campus_id', '=', 'campuses.id')
                 ->leftJoin('locations', 'inventory_balances.location_id', '=', 'locations.id')
                 ->select(
@@ -86,8 +80,8 @@ class UnifiedItem extends Model
                     'inventory_balances.name as item_name',
                     'inventory_balances.brand as brand',
                     DB::raw("COALESCE(inventory_balances.unit, (SELECT unit FROM purchase_items WHERE purchase_items.inventory_balance_id = inventory_balances.id AND purchase_items.unit IS NOT NULL AND purchase_items.deleted_at IS NULL ORDER BY purchase_items.id DESC LIMIT 1)) as unit_name"),
-                    DB::raw("COALESCE(classifications.name, 'Barang Habis Pakai') as classification_name"),
-                    'classifications.slug as classification_slug',
+                    DB::raw("'Barang Habis Pakai' as classification_name"),
+                    DB::raw("'barang-habis-pakai' as classification_slug"),
                     'inventory_balances.quantity as quantity',
                     'campuses.name as campus_name',
                     'locations.name as location_name',
