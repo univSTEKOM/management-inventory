@@ -11,7 +11,11 @@ use App\Models\Location;
 use App\Models\Mutation;
 use App\Services\DirectMutationService;
 use App\Services\MutationSearchService;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\Page;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
@@ -32,6 +36,14 @@ class CreateMutation extends Page
     public bool $confirming = false;
     #[Locked]
     public string $requestToken;
+
+    public bool $showingNewPicModal = false;
+    public string $newPicTarget = 'destination_pic_id';
+    public string $newPicName = '';
+    public string $newPicCode = '';
+    public string $newPicDepartment = '';
+    public string $newPicPhone = '';
+    public string $newPicEmail = '';
 
     public function mount(): void
     {
@@ -82,6 +94,207 @@ class CreateMutation extends Page
         unset($this->items[$index]);
         $this->items = array_values($this->items);
         $this->confirming = false;
+    }
+
+    public function openNewPicModal(string $target = 'destination_pic_id'): void
+    {
+        $this->newPicTarget = in_array($target, ['source_pic_id', 'destination_pic_id'], true) ? $target : 'destination_pic_id';
+        $this->newPicName = '';
+        $this->newPicCode = '';
+        $this->newPicDepartment = '';
+        $this->newPicPhone = '';
+        $this->newPicEmail = '';
+        $this->resetErrorBag('newPicName');
+        $this->resetErrorBag('newPicCode');
+        $this->showingNewPicModal = true;
+    }
+
+    public function closeNewPicModal(): void
+    {
+        $this->showingNewPicModal = false;
+    }
+
+    public function saveNewPic(): void
+    {
+        $this->validate([
+            'newPicName' => ['required', 'string', 'max:255'],
+            'newPicCode' => ['nullable', 'string', 'max:255', 'unique:employees,employee_code'],
+            'newPicDepartment' => ['nullable', 'string', 'max:255'],
+            'newPicPhone' => ['nullable', 'string', 'max:255'],
+            'newPicEmail' => ['nullable', 'email', 'max:255'],
+        ], [
+            'newPicName.required' => 'Nama lengkap PIC wajib diisi.',
+            'newPicCode.unique' => 'Nomor induk / NIP sudah terdaftar.',
+            'newPicEmail.email' => 'Format email tidak valid.',
+        ]);
+
+        $employee = Employee::create([
+            'name' => trim($this->newPicName),
+            'employee_code' => trim($this->newPicCode) ?: null,
+            'department' => trim($this->newPicDepartment) ?: null,
+            'phone' => trim($this->newPicPhone) ?: null,
+            'email' => trim($this->newPicEmail) ?: null,
+            'active' => true,
+        ]);
+
+        $this->data[$this->newPicTarget] = (string) $employee->id;
+        $this->showingNewPicModal = false;
+
+        \Filament\Notifications\Notification::make()
+            ->title('PIC berhasil ditambahkan')
+            ->body("Karyawan {$employee->name} telah ditambahkan dan dipilih sebagai " . ($this->newPicTarget === 'source_pic_id' ? 'PIC Asal' : 'PIC Tujuan') . '.')
+            ->success()
+            ->send();
+    }
+
+    public function sourceRouteSchema(Schema $schema): Schema
+    {
+        return $schema
+            ->statePath('data')
+            ->components([
+                Select::make('source_campus_id')
+                    ->label('Gedung Asal')
+                    ->placeholder('-- Pilih Gedung Asal --')
+                    ->options(fn () => Campus::orderBy('name')->pluck('name', 'id'))
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->required()
+                    ->afterStateUpdated(function (callable $set) {
+                        $set('source_location_id', null);
+                        $this->items = [];
+                        $this->search = '';
+                        $this->confirming = false;
+                    }),
+
+                Select::make('source_location_id')
+                    ->label('Ruangan Asal')
+                    ->placeholder(fn (callable $get) => blank($get('source_campus_id')) ? 'Pilih gedung asal terlebih dahulu' : '-- Pilih Ruangan Asal --')
+                    ->options(fn (callable $get) => Location::where('campus_id', $get('source_campus_id'))->orderBy('name')->pluck('name', 'id'))
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->required()
+                    ->disabled(fn (callable $get) => blank($get('source_campus_id')))
+                    ->afterStateUpdated(function () {
+                        $this->items = [];
+                        $this->search = '';
+                        $this->confirming = false;
+                    }),
+
+                Select::make('source_pic_id')
+                    ->label('PIC Asal')
+                    ->placeholder('-- Tanpa PIC Khusus --')
+                    ->options(fn () => Employee::orderBy('name')->pluck('name', 'id'))
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->hintAction(
+                        Action::make('addSourcePic')
+                            ->label('+ Tambah PIC')
+                            ->icon('heroicon-m-plus-circle')
+                            ->color('primary')
+                            ->action(fn () => $this->openNewPicModal('source_pic_id'))
+                    )
+                    ->createOptionAction(
+                        fn (Action $action) => $action
+                            ->modalHeading('Tambah PIC Asal Baru')
+                            ->modalWidth('md')
+                    )
+                    ->createOptionForm([
+                        TextInput::make('name')->label('Nama Lengkap')->required(),
+                        TextInput::make('employee_code')->label('NIP / Kode Karyawan')->unique('employees', 'employee_code'),
+                        TextInput::make('department')->label('Departemen / Divisi'),
+                        TextInput::make('phone')->label('No. Telepon / WhatsApp'),
+                        TextInput::make('email')->label('Email')->email(),
+                    ])
+                    ->createOptionUsing(function (array $data) {
+                        return Employee::create([
+                            'name' => trim($data['name']),
+                            'employee_code' => trim($data['employee_code'] ?? '') ?: null,
+                            'department' => trim($data['department'] ?? '') ?: null,
+                            'phone' => trim($data['phone'] ?? '') ?: null,
+                            'email' => trim($data['email'] ?? '') ?: null,
+                            'active' => true,
+                        ])->id;
+                    }),
+            ]);
+    }
+
+    public function destinationRouteSchema(Schema $schema): Schema
+    {
+        return $schema
+            ->statePath('data')
+            ->components([
+                Select::make('destination_campus_id')
+                    ->label('Gedung Tujuan')
+                    ->placeholder('-- Pilih Gedung Tujuan --')
+                    ->options(fn () => Campus::orderBy('name')->pluck('name', 'id'))
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->required()
+                    ->afterStateUpdated(function (callable $set) {
+                        $set('destination_location_id', null);
+                        $this->confirming = false;
+                    }),
+
+                Select::make('destination_location_id')
+                    ->label('Ruangan Tujuan')
+                    ->placeholder(fn (callable $get) => blank($get('destination_campus_id')) ? 'Pilih gedung tujuan terlebih dahulu' : '-- Pilih Ruangan Tujuan --')
+                    ->options(fn (callable $get) => Location::where('campus_id', $get('destination_campus_id'))->orderBy('name')->pluck('name', 'id'))
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->required()
+                    ->disabled(fn (callable $get) => blank($get('destination_campus_id')))
+                    ->afterStateUpdated(function () {
+                        $this->confirming = false;
+                    }),
+
+                Select::make('destination_pic_id')
+                    ->label('PIC Tujuan')
+                    ->placeholder('-- Tanpa PIC Khusus --')
+                    ->options(fn () => Employee::orderBy('name')->pluck('name', 'id'))
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->hintAction(
+                        Action::make('addDestinationPic')
+                            ->label('+ Tambah PIC')
+                            ->icon('heroicon-m-plus-circle')
+                            ->color('success')
+                            ->action(fn () => $this->openNewPicModal('destination_pic_id'))
+                    )
+                    ->createOptionAction(
+                        fn (Action $action) => $action
+                            ->modalHeading('Tambah PIC Tujuan Baru')
+                            ->modalWidth('md')
+                    )
+                    ->createOptionForm([
+                        TextInput::make('name')->label('Nama Lengkap')->required(),
+                        TextInput::make('employee_code')->label('NIP / Kode Karyawan')->unique('employees', 'employee_code'),
+                        TextInput::make('department')->label('Departemen / Divisi'),
+                        TextInput::make('phone')->label('No. Telepon / WhatsApp'),
+                        TextInput::make('email')->label('Email')->email(),
+                    ])
+                    ->createOptionUsing(function (array $data) {
+                        return Employee::create([
+                            'name' => trim($data['name']),
+                            'employee_code' => trim($data['employee_code'] ?? '') ?: null,
+                            'department' => trim($data['department'] ?? '') ?: null,
+                            'phone' => trim($data['phone'] ?? '') ?: null,
+                            'email' => trim($data['email'] ?? '') ?: null,
+                            'active' => true,
+                        ])->id;
+                    }),
+            ]);
     }
 
     public function review(): void

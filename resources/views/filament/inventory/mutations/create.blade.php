@@ -109,72 +109,7 @@
                             </span>
                         </div>
 
-                        {{-- Gedung Asal --}}
-                        <div class="space-y-1">
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                Gedung Asal <span class="text-danger-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <select
-                                    aria-label="Gedung Asal"
-                                    class="w-full h-10 pl-3 pr-9 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-2xs hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition cursor-pointer appearance-none"
-                                    wire:model.live="data.source_campus_id"
-                                >
-                                    <option value="">-- Pilih Gedung Asal --</option>
-                                    @foreach ($campuses as $campus)
-                                        <option value="{{ $campus->id }}">{{ $campus->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                                    <x-filament::icon icon="heroicon-m-chevron-down" class="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Ruangan Asal --}}
-                        <div class="space-y-1">
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                Ruangan Asal <span class="text-danger-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <select
-                                    aria-label="Ruangan Asal"
-                                    class="w-full h-10 pl-3 pr-9 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-2xs hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition cursor-pointer appearance-none disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800/50"
-                                    wire:model.live="data.source_location_id"
-                                    @disabled(! $data['source_campus_id'])
-                                >
-                                    <option value="">{{ $data['source_campus_id'] ? '-- Pilih Ruangan Asal --' : 'Pilih gedung asal terlebih dahulu' }}</option>
-                                    @foreach ($sourceLocations as $location)
-                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                                    <x-filament::icon icon="heroicon-m-chevron-down" class="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- PIC Asal --}}
-                        <div class="space-y-1">
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                PIC Asal <span class="text-gray-400 font-normal">(opsional)</span>
-                            </label>
-                            <div class="relative">
-                                <select
-                                    aria-label="PIC Asal"
-                                    class="w-full h-10 pl-3 pr-9 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-2xs hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition cursor-pointer appearance-none"
-                                    wire:model.live="data.source_pic_id"
-                                >
-                                    <option value="">-- Tanpa PIC Khusus --</option>
-                                    @foreach ($employees as $employee)
-                                        <option value="{{ $employee->id }}">{{ $employee->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                                    <x-filament::icon icon="heroicon-m-chevron-down" class="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
+                        {{ $this->getSchema('sourceRouteSchema') }}
                     </div>
 
                     {{-- Card Lokasi Tujuan --}}
@@ -189,72 +124,7 @@
                             </span>
                         </div>
 
-                        {{-- Gedung Tujuan --}}
-                        <div class="space-y-1">
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                Gedung Tujuan <span class="text-danger-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <select
-                                    aria-label="Gedung Tujuan"
-                                    class="w-full h-10 pl-3 pr-9 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-2xs hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition cursor-pointer appearance-none"
-                                    wire:model.live="data.destination_campus_id"
-                                >
-                                    <option value="">-- Pilih Gedung Tujuan --</option>
-                                    @foreach ($campuses as $campus)
-                                        <option value="{{ $campus->id }}">{{ $campus->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                                    <x-filament::icon icon="heroicon-m-chevron-down" class="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Ruangan Tujuan --}}
-                        <div class="space-y-1">
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                Ruangan Tujuan <span class="text-danger-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <select
-                                    aria-label="Ruangan Tujuan"
-                                    class="w-full h-10 pl-3 pr-9 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-2xs hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition cursor-pointer appearance-none disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-gray-800/50"
-                                    wire:model.live="data.destination_location_id"
-                                    @disabled(! $data['destination_campus_id'])
-                                >
-                                    <option value="">{{ $data['destination_campus_id'] ? '-- Pilih Ruangan Tujuan --' : 'Pilih gedung tujuan terlebih dahulu' }}</option>
-                                    @foreach ($destinationLocations as $location)
-                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                                    <x-filament::icon icon="heroicon-m-chevron-down" class="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- PIC Tujuan --}}
-                        <div class="space-y-1">
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                                PIC Tujuan <span class="text-gray-400 font-normal">(opsional)</span>
-                            </label>
-                            <div class="relative">
-                                <select
-                                    aria-label="PIC Tujuan"
-                                    class="w-full h-10 pl-3 pr-9 text-xs font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-2xs hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition cursor-pointer appearance-none"
-                                    wire:model.live="data.destination_pic_id"
-                                >
-                                    <option value="">-- Tanpa PIC Khusus --</option>
-                                    @foreach ($employees as $employee)
-                                        <option value="{{ $employee->id }}">{{ $employee->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
-                                    <x-filament::icon icon="heroicon-m-chevron-down" class="w-4 h-4" />
-                                </div>
-                            </div>
-                        </div>
+                        {{ $this->getSchema('destinationRouteSchema') }}
                     </div>
                 </div>
 
@@ -754,6 +624,142 @@
                             wire:loading.attr="disabled"
                         >
                             Konfirmasi &amp; Proses
+                        </x-filament::button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- Modal Tambah PIC Baru --}}
+        @if ($showingNewPicModal)
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="new-pic-modal-title"
+                x-data
+                x-trap.inert.noscroll="true"
+                x-on:keydown.escape.window="$wire.closeNewPicModal()"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/70 backdrop-blur-xs transition-opacity"
+            >
+                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-2xl p-6 shadow-2xl max-w-md w-full space-y-5 animate-in fade-in duration-200">
+                    {{-- Modal Header --}}
+                    <div class="flex items-start justify-between border-b border-gray-200 dark:border-white/10 pb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-950/60 dark:text-primary-400 border border-primary-100 dark:border-primary-900/50">
+                                <x-filament::icon icon="heroicon-o-user-plus" class="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 id="new-pic-modal-title" class="text-base font-bold text-gray-900 dark:text-white">
+                                    Tambah PIC / Karyawan Baru
+                                </h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    Untuk dipilih sebagai <strong>{{ $newPicTarget === 'source_pic_id' ? 'PIC Asal' : 'PIC Tujuan' }}</strong>
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            wire:click="closeNewPicModal"
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+                        >
+                            <x-filament::icon icon="heroicon-m-x-mark" class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {{-- Form Fields --}}
+                    <div class="space-y-3.5">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                Nama Lengkap <span class="text-danger-500">*</span>
+                            </label>
+                            <x-filament::input.wrapper>
+                                <x-filament::input
+                                    type="text"
+                                    wire:model="newPicName"
+                                    placeholder="Contoh: Budi Santoso, S.Kom"
+                                    autofocus
+                                />
+                            </x-filament::input.wrapper>
+                            @error('newPicName')
+                                <span class="text-[11px] text-danger-600 dark:text-danger-400 font-medium">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                Nomor Induk / NIP <span class="text-gray-400 font-normal">(opsional)</span>
+                            </label>
+                            <x-filament::input.wrapper>
+                                <x-filament::input
+                                    type="text"
+                                    wire:model="newPicCode"
+                                    placeholder="Contoh: EMP-00123"
+                                />
+                            </x-filament::input.wrapper>
+                            @error('newPicCode')
+                                <span class="text-[11px] text-danger-600 dark:text-danger-400 font-medium">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                Departemen / Divisi <span class="text-gray-400 font-normal">(opsional)</span>
+                            </label>
+                            <x-filament::input.wrapper>
+                                <x-filament::input
+                                    type="text"
+                                    wire:model="newPicDepartment"
+                                    placeholder="Contoh: Bagian IT & Sarpras"
+                                />
+                            </x-filament::input.wrapper>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                    No. Telepon <span class="text-gray-400 font-normal">(opsional)</span>
+                                </label>
+                                <x-filament::input.wrapper>
+                                    <x-filament::input
+                                        type="tel"
+                                        wire:model="newPicPhone"
+                                        placeholder="0812xxxx"
+                                    />
+                                </x-filament::input.wrapper>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                    Email <span class="text-gray-400 font-normal">(opsional)</span>
+                                </label>
+                                <x-filament::input.wrapper>
+                                    <x-filament::input
+                                        type="email"
+                                        wire:model="newPicEmail"
+                                        placeholder="nama@stekom.ac.id"
+                                    />
+                                </x-filament::input.wrapper>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Modal Footer --}}
+                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-200 dark:border-white/10">
+                        <x-filament::button
+                            type="button"
+                            color="gray"
+                            wire:click="closeNewPicModal"
+                        >
+                            Batal
+                        </x-filament::button>
+
+                        <x-filament::button
+                            type="button"
+                            color="primary"
+                            icon="heroicon-m-check"
+                            wire:click="saveNewPic"
+                            wire:loading.attr="disabled"
+                        >
+                            Simpan PIC
                         </x-filament::button>
                     </div>
                 </div>
